@@ -18,8 +18,8 @@ package main
 
 import (
     "fmt"
+
     "github.com/sageox/agentx"
-    _ "github.com/sageox/agentx/agents"
 )
 
 func main() {
@@ -129,7 +129,6 @@ import (
     "os"
 
     "github.com/sageox/agentx"
-    _ "github.com/sageox/agentx/agents" // registers all agents
 )
 
 func main() {
@@ -253,17 +252,13 @@ env.PathBinaries = map[string]string{"claude": "/usr/bin/claude"}
 
 ## Package Structure
 
-This package follows the `database/sql` driver pattern:
-
-- `agentx` - Core types, interfaces, and detection API
-- `agentx/agents` - Agent implementations (import with `_` for side effects)
+Single package - just import and use:
 
 ```go
-import (
-    "github.com/sageox/agentx"
-    _ "github.com/sageox/agentx/agents" // registers all 12 agents
-)
+import "github.com/sageox/agentx"
 ```
+
+All 12 agents are automatically registered.
 
 ## Use Cases
 

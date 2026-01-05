@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/sageox/agentx"
-	"github.com/sageox/agentx/agents"
+	
 )
 
 func TestDetect_AGENT_ENV(t *testing.T) {
@@ -444,7 +444,7 @@ func TestAgentConfigPaths_ErrorHandling(t *testing.T) {
 		env := agentx.NewMockEnvironment(nil)
 		env.HomeError = errors.New("home directory not found")
 
-		agent := agents.NewClaudeCodeAgent()
+		agent := agentx.NewClaudeCodeAgent()
 		_, err := agent.UserConfigPath(env)
 		if err == nil {
 			t.Error("UserConfigPath() should return error when HomeDir fails")
@@ -459,7 +459,7 @@ func TestAgentIsInstalled(t *testing.T) {
 		env := agentx.NewMockEnvironment(nil)
 		env.PathBinaries = map[string]string{"claude": "/usr/local/bin/claude"}
 
-		agent := agents.NewClaudeCodeAgent()
+		agent := agentx.NewClaudeCodeAgent()
 		installed, err := agent.IsInstalled(ctx, env)
 		if err != nil {
 			t.Fatalf("IsInstalled() error: %v", err)
@@ -474,7 +474,7 @@ func TestAgentIsInstalled(t *testing.T) {
 		env.Home = "/home/user"
 		env.ExistingDirs = map[string]bool{"/home/user/.claude": true}
 
-		agent := agents.NewClaudeCodeAgent()
+		agent := agentx.NewClaudeCodeAgent()
 		installed, err := agent.IsInstalled(ctx, env)
 		if err != nil {
 			t.Fatalf("IsInstalled() error: %v", err)
@@ -488,7 +488,7 @@ func TestAgentIsInstalled(t *testing.T) {
 		env := agentx.NewMockEnvironment(nil)
 		env.Home = "/home/user"
 
-		agent := agents.NewClaudeCodeAgent()
+		agent := agentx.NewClaudeCodeAgent()
 		installed, err := agent.IsInstalled(ctx, env)
 		if err != nil {
 			t.Fatalf("IsInstalled() error: %v", err)
@@ -502,7 +502,7 @@ func TestAgentIsInstalled(t *testing.T) {
 		env := agentx.NewMockEnvironment(nil)
 		env.HomeError = errors.New("home directory not found")
 
-		agent := agents.NewClaudeCodeAgent()
+		agent := agentx.NewClaudeCodeAgent()
 		installed, err := agent.IsInstalled(ctx, env)
 		if err != nil {
 			t.Fatalf("IsInstalled() should not return error, got: %v", err)
@@ -521,7 +521,7 @@ func TestCursorIsInstalled_MacOS(t *testing.T) {
 		env.OS = "darwin"
 		env.ExistingDirs = map[string]bool{"/Applications/Cursor.app": true}
 
-		agent := agents.NewCursorAgent()
+		agent := agentx.NewCursorAgent()
 		installed, err := agent.IsInstalled(ctx, env)
 		if err != nil {
 			t.Fatalf("IsInstalled() error: %v", err)
