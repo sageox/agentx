@@ -1,6 +1,7 @@
-package agentx
+package agents
 
 import (
+	"github.com/sageox/agentx"
 	"context"
 	"path/filepath"
 
@@ -14,8 +15,8 @@ func NewClaudeCodeAgent() *ClaudeCodeAgent {
 	return &ClaudeCodeAgent{}
 }
 
-func (a *ClaudeCodeAgent) Type() AgentType {
-	return AgentTypeClaudeCode
+func (a *ClaudeCodeAgent) Type() agentx.AgentType {
+	return agentx.AgentTypeClaudeCode
 }
 
 func (a *ClaudeCodeAgent) Name() string {
@@ -30,17 +31,15 @@ func (a *ClaudeCodeAgent) URL() string {
 //
 // Detection methods:
 //   - CLAUDECODE=1 (set by Claude Code)
-//   - AGENT_ENV=claude-code or claudecode or claude
-func (a *ClaudeCodeAgent) Detect(ctx context.Context, env Environment) (bool, error) {
+//   - AGENT_ENV=claude
+func (a *ClaudeCodeAgent) Detect(ctx context.Context, env agentx.Environment) (bool, error) {
 	// Check CLAUDECODE env var (set by Claude Code itself)
 	if env.GetEnv("CLAUDECODE") == "1" {
 		return true, nil
 	}
 
 	// Check explicit AGENT_ENV
-	agentEnv := env.GetEnv("AGENT_ENV")
-	switch agentEnv {
-	case "claude-code", "claudecode", "claude":
+	if env.GetEnv("AGENT_ENV") == "claude" {
 		return true, nil
 	}
 
@@ -48,7 +47,7 @@ func (a *ClaudeCodeAgent) Detect(ctx context.Context, env Environment) (bool, er
 }
 
 // UserConfigPath returns the Claude Code user configuration directory (~/.claude).
-func (a *ClaudeCodeAgent) UserConfigPath(env Environment) (string, error) {
+func (a *ClaudeCodeAgent) UserConfigPath(env agentx.Environment) (string, error) {
 	home, err := env.HomeDir()
 	if err != nil {
 		return "", err
@@ -67,7 +66,7 @@ func (a *ClaudeCodeAgent) ContextFiles() []string {
 }
 
 // IsInstalled checks if Claude Code is installed on the system.
-func (a *ClaudeCodeAgent) IsInstalled(ctx context.Context, env Environment) (bool, error) {
+func (a *ClaudeCodeAgent) IsInstalled(ctx context.Context, env agentx.Environment) (bool, error) {
 	// Check if claude CLI is in PATH
 	if _, err := env.LookPath("claude"); err == nil {
 		return true, nil
@@ -85,4 +84,4 @@ func (a *ClaudeCodeAgent) IsInstalled(ctx context.Context, env Environment) (boo
 	return false, nil
 }
 
-var _ Agent = (*ClaudeCodeAgent)(nil)
+var _ agentx.Agent = (*ClaudeCodeAgent)(nil)

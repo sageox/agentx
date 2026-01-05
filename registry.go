@@ -78,24 +78,38 @@ func (d *detector) getEnv() Environment {
 	return NewSystemEnvironment()
 }
 
+// agentEnvAliases maps AGENT_ENV values to canonical agent types.
+// We use the canonical agent type slug (e.g., "claude") as the standard.
+var agentEnvAliases = map[string]AgentType{
+	"claude": AgentTypeClaudeCode,
+	"cursor":      AgentTypeCursor,
+	"windsurf":    AgentTypeWindsurf,
+	"copilot":     AgentTypeCopilot,
+	"aider":       AgentTypeAider,
+	"cody":        AgentTypeCody,
+	"continue":    AgentTypeContinue,
+	"code-puppy":  AgentTypeCodePuppy,
+	"kiro":        AgentTypeKiro,
+	"opencode":    AgentTypeOpenCode,
+	"goose":       AgentTypeGoose,
+	"amp":         AgentTypeAmp,
+}
+
 func (d *detector) detect(ctx context.Context) (Agent, error) {
 	env := d.getEnv()
 
-	// First check explicit AGENT_ENV
+	// First check explicit AGENT_ENV - this is the definitive answer if set
 	if agentEnv := env.GetEnv("AGENT_ENV"); agentEnv != "" {
-		// Try to find matching agent
-		for _, agent := range d.registry.List() {
-			detected, err := agent.Detect(ctx, env)
-			if err != nil {
-				continue
-			}
-			if detected {
+		if agentType, ok := agentEnvAliases[agentEnv]; ok {
+			if agent, ok := d.registry.Get(agentType); ok {
 				return agent, nil
 			}
 		}
+		// AGENT_ENV set but not recognized - don't fall through to native detection
+		return nil, nil
 	}
 
-	// Then check each agent's native detection
+	// Then check each agent's native detection (env vars, heuristics)
 	for _, agent := range d.registry.List() {
 		detected, err := agent.Detect(ctx, env)
 		if err != nil {

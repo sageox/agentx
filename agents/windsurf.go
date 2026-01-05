@@ -1,6 +1,7 @@
-package agentx
+package agents
 
 import (
+	"github.com/sageox/agentx"
 	"context"
 	"path/filepath"
 
@@ -14,8 +15,8 @@ func NewWindsurfAgent() *WindsurfAgent {
 	return &WindsurfAgent{}
 }
 
-func (a *WindsurfAgent) Type() AgentType {
-	return AgentTypeWindsurf
+func (a *WindsurfAgent) Type() agentx.AgentType {
+	return agentx.AgentTypeWindsurf
 }
 
 func (a *WindsurfAgent) Name() string {
@@ -30,23 +31,21 @@ func (a *WindsurfAgent) URL() string {
 //
 // Detection methods:
 //   - WINDSURF_AGENT=1 (future standard)
-//   - CODEIUM_AGENT=1 (alternative)
-//   - AGENT_ENV=windsurf or codeium
-func (a *WindsurfAgent) Detect(ctx context.Context, env Environment) (bool, error) {
+//   - CODEIUM_AGENT=1 (Codeium is the company that makes Windsurf)
+//   - AGENT_ENV=windsurf
+func (a *WindsurfAgent) Detect(ctx context.Context, env agentx.Environment) (bool, error) {
 	// Check explicit WINDSURF_AGENT env var
 	if env.GetEnv("WINDSURF_AGENT") == "1" {
 		return true, nil
 	}
 
-	// Check CODEIUM_AGENT (Windsurf was formerly Codeium)
+	// Check CODEIUM_AGENT (Codeium is the company that makes Windsurf)
 	if env.GetEnv("CODEIUM_AGENT") == "1" {
 		return true, nil
 	}
 
 	// Check AGENT_ENV
-	agentEnv := env.GetEnv("AGENT_ENV")
-	switch agentEnv {
-	case "windsurf", "codeium":
+	if env.GetEnv("AGENT_ENV") == "windsurf" {
 		return true, nil
 	}
 
@@ -54,7 +53,7 @@ func (a *WindsurfAgent) Detect(ctx context.Context, env Environment) (bool, erro
 }
 
 // UserConfigPath returns the Windsurf user configuration directory (~/.codeium).
-func (a *WindsurfAgent) UserConfigPath(env Environment) (string, error) {
+func (a *WindsurfAgent) UserConfigPath(env agentx.Environment) (string, error) {
 	home, err := env.HomeDir()
 	if err != nil {
 		return "", err
@@ -73,7 +72,7 @@ func (a *WindsurfAgent) ContextFiles() []string {
 }
 
 // IsInstalled checks if Windsurf is installed on the system.
-func (a *WindsurfAgent) IsInstalled(ctx context.Context, env Environment) (bool, error) {
+func (a *WindsurfAgent) IsInstalled(ctx context.Context, env agentx.Environment) (bool, error) {
 	// Check if windsurf CLI is in PATH
 	if _, err := env.LookPath("windsurf"); err == nil {
 		return true, nil
@@ -98,4 +97,4 @@ func (a *WindsurfAgent) IsInstalled(ctx context.Context, env Environment) (bool,
 	return false, nil
 }
 
-var _ Agent = (*WindsurfAgent)(nil)
+var _ agentx.Agent = (*WindsurfAgent)(nil)

@@ -30,18 +30,18 @@ type AgentType string
 
 const (
 	AgentTypeUnknown    AgentType = ""
-	AgentTypeClaudeCode AgentType = "claude-code"
+	AgentTypeClaudeCode AgentType = "claude"
 	AgentTypeCursor     AgentType = "cursor"
-	AgentTypeWindsurf   AgentType = "windsurf"
-	AgentTypeCopilot    AgentType = "copilot"
-	AgentTypeAider      AgentType = "aider"
-	AgentTypeCody       AgentType = "cody"
-	AgentTypeContinue   AgentType = "continue"
-	AgentTypeCodePuppy  AgentType = "code-puppy"
-	AgentTypeKiro       AgentType = "kiro"
-	AgentTypeOpenCode   AgentType = "opencode"
-	AgentTypeGoose      AgentType = "goose"
-	AgentTypeAmp        AgentType = "amp"
+	AgentTypeWindsurf  AgentType = "windsurf"
+	AgentTypeCopilot   AgentType = "copilot"
+	AgentTypeAider     AgentType = "aider"
+	AgentTypeCody      AgentType = "cody"
+	AgentTypeContinue  AgentType = "continue"
+	AgentTypeCodePuppy AgentType = "code-puppy"
+	AgentTypeKiro      AgentType = "kiro"
+	AgentTypeOpenCode  AgentType = "opencode"
+	AgentTypeGoose     AgentType = "goose"
+	AgentTypeAmp       AgentType = "amp"
 )
 
 // SupportedAgents is the canonical list of coding agents that agentx supports.
