@@ -1,0 +1,16 @@
+.PHONY: test test-verbose lint build clean
+
+test:
+	go test -race ./...
+
+test-verbose:
+	go test -race -v ./...
+
+lint:
+	go vet ./...
+
+build:
+	go build ./...
+
+clean:
+	go clean ./...
