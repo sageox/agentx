@@ -1,0 +1,11 @@
+{
+  "config_version": "2",
+  "repo_id": "repo_019ce878-1712-7246-b0c9-ebea2f8348f6",
+  "repo_remote_hashes": [
+    "sha256:459973d8c296833decfc73d56a505902edf3463df1fda1ab0efbc44c40633527"
+  ],
+  "team_id": "team_jihjpfkt8b",
+  "team_name": "SageOx",
+  "endpoint": "https://sageox.ai",
+  "update_frequency_hours": 24
+}
