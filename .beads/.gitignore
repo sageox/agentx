@@ -5,6 +5,10 @@
 *.db-wal
 *.db-shm
 
+# Dolt database (local-only, managed by bd dolt commands)
+dolt/
+dolt-server.*
+
 # Daemon runtime files
 daemon.lock
 daemon.log
