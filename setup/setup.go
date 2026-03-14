@@ -71,6 +71,9 @@ func RegisterDefaultAgents() {
 	// Droid (Factory.ai)
 	agentx.DefaultRegistry.Register(agents.NewDroidAgent())
 
+	// Pi (shittycodingagent.ai)
+	agentx.DefaultRegistry.Register(agents.NewPiAgent())
+
 	// Orchestrators
 	agentx.DefaultRegistry.Register(orchestrators.NewOpenClawAgent())
 	agentx.DefaultRegistry.Register(orchestrators.NewConductorAgent())

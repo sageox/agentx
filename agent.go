@@ -41,6 +41,7 @@ const (
 	AgentTypeAmp        AgentType = "amp"
 	AgentTypeCline      AgentType = "cline"
 	AgentTypeDroid      AgentType = "droid"
+	AgentTypePi         AgentType = "pi"
 	AgentTypeCustom     AgentType = "custom"
 
 	// Orchestrators
@@ -67,6 +68,7 @@ var SupportedAgents = []AgentType{
 	AgentTypeAmp,
 	AgentTypeCline,
 	AgentTypeDroid,
+	AgentTypePi,
 
 	// Orchestrators
 	AgentTypeOpenClaw,
