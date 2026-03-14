@@ -21,6 +21,88 @@ const (
 	RoleOrchestrator AgentRole = "orchestrator"
 )
 
+// SessionOrigin describes who initiated a coding session.
+// Used by session recording systems to classify sessions in metadata.
+type SessionOrigin string
+
+const (
+	// OriginHuman indicates a human is actively prompting the AI coworker.
+	// This is the default — most sessions are human-driven.
+	OriginHuman SessionOrigin = "human"
+
+	// OriginSubagent indicates the session was spawned by a parent agent session.
+	// Detected when known subagent environment signals are present.
+	OriginSubagent SessionOrigin = "subagent"
+
+	// OriginAgent indicates autonomous/background agent work with no human in the loop.
+	// Detected via CI environment variables or explicitly declared by the caller.
+	OriginAgent SessionOrigin = "agent"
+)
+
+// subagentEnvSignals maps environment variables to values that definitively
+// indicate the session was spawned by a parent agent.
+var subagentEnvSignals = map[string]string{
+	"CLAUDE_CODE_ENTRY_POINT": "task",
+}
+
+// ciEnvVars are environment variables whose presence indicates CI/automated
+// execution with no human in the loop.
+var ciEnvVars = []string{
+	"CI",
+	"GITHUB_ACTIONS",
+	"GITLAB_CI",
+	"JENKINS_URL",
+	"BUILDKITE",
+	"CIRCLECI",
+	"TRAVIS",
+	"CODEBUILD_BUILD_ID",
+}
+
+// DetectOrigin classifies session initiation from environment signals.
+// Uses definitive signals only — no heuristics or PID sniffing.
+//
+// Priority:
+//  1. Known subagent env vars (definitive parent signal) → OriginSubagent
+//  2. Explicit value from caller (e.g., --origin=agent flag) → returns as-is
+//  3. Known CI env vars (CI=true, GITHUB_ACTIONS, etc.) → OriginAgent
+//  4. Default → OriginHuman
+func DetectOrigin(env Environment, explicit SessionOrigin) SessionOrigin {
+	for key, want := range subagentEnvSignals {
+		if got := env.GetEnv(key); got == want {
+			return OriginSubagent
+		}
+	}
+	if explicit != "" {
+		return explicit
+	}
+	for _, key := range ciEnvVars {
+		if v := env.GetEnv(key); v != "" {
+			return OriginAgent
+		}
+	}
+	return OriginHuman
+}
+
+// DetectOriginFromOS is a convenience wrapper that uses the real system environment.
+func DetectOriginFromOS(explicit SessionOrigin) SessionOrigin {
+	return DetectOrigin(NewSystemEnvironment(), explicit)
+}
+
+// ValidOrigins returns all valid SessionOrigin values.
+func ValidOrigins() []SessionOrigin {
+	return []SessionOrigin{OriginHuman, OriginSubagent, OriginAgent}
+}
+
+// IsValid returns true if the origin is a recognized value.
+func (o SessionOrigin) IsValid() bool {
+	switch o {
+	case OriginHuman, OriginSubagent, OriginAgent:
+		return true
+	default:
+		return false
+	}
+}
+
 // AgentType identifies a coding agent or orchestrator.
 type AgentType string
 
