@@ -26,6 +26,7 @@ func TestSupportedAgents(t *testing.T) {
 		AgentTypeAmp,
 		AgentTypeCline,
 		AgentTypeDroid,
+		AgentTypePi,
 		AgentTypeOpenClaw,
 		AgentTypeConductor,
 	}
