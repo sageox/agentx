@@ -1,6 +1,7 @@
-package agentx
+package agents
 
 import (
+	"github.com/sageox/agentx"
 	"context"
 	"path/filepath"
 
@@ -14,8 +15,8 @@ func NewCopilotAgent() *CopilotAgent {
 	return &CopilotAgent{}
 }
 
-func (a *CopilotAgent) Type() AgentType {
-	return AgentTypeCopilot
+func (a *CopilotAgent) Type() agentx.AgentType {
+	return agentx.AgentTypeCopilot
 }
 
 func (a *CopilotAgent) Name() string {
@@ -31,7 +32,7 @@ func (a *CopilotAgent) URL() string {
 // Detection methods:
 //   - COPILOT_AGENT=1 (future standard)
 //   - AGENT_ENV=copilot or github-copilot
-func (a *CopilotAgent) Detect(ctx context.Context, env Environment) (bool, error) {
+func (a *CopilotAgent) Detect(ctx context.Context, env agentx.Environment) (bool, error) {
 	// Check explicit COPILOT_AGENT env var
 	if env.GetEnv("COPILOT_AGENT") == "1" {
 		return true, nil
@@ -48,7 +49,7 @@ func (a *CopilotAgent) Detect(ctx context.Context, env Environment) (bool, error
 }
 
 // UserConfigPath returns the GitHub Copilot user configuration directory.
-func (a *CopilotAgent) UserConfigPath(env Environment) (string, error) {
+func (a *CopilotAgent) UserConfigPath(env agentx.Environment) (string, error) {
 	home, err := env.HomeDir()
 	if err != nil {
 		return "", err
@@ -67,7 +68,7 @@ func (a *CopilotAgent) ContextFiles() []string {
 }
 
 // IsInstalled checks if GitHub Copilot is installed on the system.
-func (a *CopilotAgent) IsInstalled(ctx context.Context, env Environment) (bool, error) {
+func (a *CopilotAgent) IsInstalled(ctx context.Context, env agentx.Environment) (bool, error) {
 	// Check if gh CLI is in PATH (Copilot is a gh extension)
 	if _, err := env.LookPath("gh"); err == nil {
 		return true, nil
@@ -85,4 +86,4 @@ func (a *CopilotAgent) IsInstalled(ctx context.Context, env Environment) (bool, 
 	return false, nil
 }
 
-var _ Agent = (*CopilotAgent)(nil)
+var _ agentx.Agent = (*CopilotAgent)(nil)

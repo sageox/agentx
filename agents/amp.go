@@ -1,6 +1,7 @@
-package agentx
+package agents
 
 import (
+	"github.com/sageox/agentx"
 	"context"
 	"path/filepath"
 
@@ -14,8 +15,8 @@ func NewAmpAgent() *AmpAgent {
 	return &AmpAgent{}
 }
 
-func (a *AmpAgent) Type() AgentType {
-	return AgentTypeAmp
+func (a *AmpAgent) Type() agentx.AgentType {
+	return agentx.AgentTypeAmp
 }
 
 func (a *AmpAgent) Name() string {
@@ -31,7 +32,7 @@ func (a *AmpAgent) URL() string {
 // Detection methods:
 //   - AMP_AGENT=1 or AMP=1
 //   - AGENT_ENV=amp
-func (a *AmpAgent) Detect(ctx context.Context, env Environment) (bool, error) {
+func (a *AmpAgent) Detect(ctx context.Context, env agentx.Environment) (bool, error) {
 	// Check AMP env vars
 	if env.GetEnv("AMP") == "1" || env.GetEnv("AMP_AGENT") == "1" {
 		return true, nil
@@ -46,7 +47,7 @@ func (a *AmpAgent) Detect(ctx context.Context, env Environment) (bool, error) {
 }
 
 // UserConfigPath returns the Amp user configuration directory (~/.amp).
-func (a *AmpAgent) UserConfigPath(env Environment) (string, error) {
+func (a *AmpAgent) UserConfigPath(env agentx.Environment) (string, error) {
 	home, err := env.HomeDir()
 	if err != nil {
 		return "", err
@@ -65,7 +66,7 @@ func (a *AmpAgent) ContextFiles() []string {
 }
 
 // IsInstalled checks if Amp is installed on the system.
-func (a *AmpAgent) IsInstalled(ctx context.Context, env Environment) (bool, error) {
+func (a *AmpAgent) IsInstalled(ctx context.Context, env agentx.Environment) (bool, error) {
 	// Check if amp is in PATH
 	if _, err := env.LookPath("amp"); err == nil {
 		return true, nil
@@ -83,4 +84,4 @@ func (a *AmpAgent) IsInstalled(ctx context.Context, env Environment) (bool, erro
 	return false, nil
 }
 
-var _ Agent = (*AmpAgent)(nil)
+var _ agentx.Agent = (*AmpAgent)(nil)

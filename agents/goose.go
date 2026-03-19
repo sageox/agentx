@@ -1,6 +1,7 @@
-package agentx
+package agents
 
 import (
+	"github.com/sageox/agentx"
 	"context"
 	"path/filepath"
 	"strings"
@@ -15,8 +16,8 @@ func NewGooseAgent() *GooseAgent {
 	return &GooseAgent{}
 }
 
-func (a *GooseAgent) Type() AgentType {
-	return AgentTypeGoose
+func (a *GooseAgent) Type() agentx.AgentType {
+	return agentx.AgentTypeGoose
 }
 
 func (a *GooseAgent) Name() string {
@@ -33,7 +34,7 @@ func (a *GooseAgent) URL() string {
 //   - GOOSE_AGENT=1 or GOOSE=1
 //   - AGENT_ENV=goose
 //   - Running from goose command (heuristic)
-func (a *GooseAgent) Detect(ctx context.Context, env Environment) (bool, error) {
+func (a *GooseAgent) Detect(ctx context.Context, env agentx.Environment) (bool, error) {
 	// Check GOOSE env vars
 	if env.GetEnv("GOOSE") == "1" || env.GetEnv("GOOSE_AGENT") == "1" {
 		return true, nil
@@ -54,7 +55,7 @@ func (a *GooseAgent) Detect(ctx context.Context, env Environment) (bool, error) 
 
 // UserConfigPath returns the Goose user configuration directory.
 // Goose uses XDG-compliant paths (~/.config/goose).
-func (a *GooseAgent) UserConfigPath(env Environment) (string, error) {
+func (a *GooseAgent) UserConfigPath(env agentx.Environment) (string, error) {
 	configDir, err := env.ConfigDir()
 	if err != nil {
 		return "", err
@@ -73,7 +74,7 @@ func (a *GooseAgent) ContextFiles() []string {
 }
 
 // IsInstalled checks if Goose is installed on the system.
-func (a *GooseAgent) IsInstalled(ctx context.Context, env Environment) (bool, error) {
+func (a *GooseAgent) IsInstalled(ctx context.Context, env agentx.Environment) (bool, error) {
 	// Check if goose is in PATH
 	if _, err := env.LookPath("goose"); err == nil {
 		return true, nil
@@ -91,4 +92,4 @@ func (a *GooseAgent) IsInstalled(ctx context.Context, env Environment) (bool, er
 	return false, nil
 }
 
-var _ Agent = (*GooseAgent)(nil)
+var _ agentx.Agent = (*GooseAgent)(nil)

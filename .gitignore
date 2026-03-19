@@ -1,0 +1,9 @@
+# Beads local state
+.beads/
+
+# Dolt database files (added by bd init)
+.dolt/
+*.db
+
+# Test coverage artifacts
+coverage.out

@@ -1,6 +1,7 @@
-package agentx
+package agents
 
 import (
+	"github.com/sageox/agentx"
 	"context"
 	"path/filepath"
 	"strings"
@@ -15,8 +16,8 @@ func NewAiderAgent() *AiderAgent {
 	return &AiderAgent{}
 }
 
-func (a *AiderAgent) Type() AgentType {
-	return AgentTypeAider
+func (a *AiderAgent) Type() agentx.AgentType {
+	return agentx.AgentTypeAider
 }
 
 func (a *AiderAgent) Name() string {
@@ -33,7 +34,7 @@ func (a *AiderAgent) URL() string {
 //   - AIDER=1 or AIDER_AGENT=1
 //   - AGENT_ENV=aider
 //   - Running from aider command
-func (a *AiderAgent) Detect(ctx context.Context, env Environment) (bool, error) {
+func (a *AiderAgent) Detect(ctx context.Context, env agentx.Environment) (bool, error) {
 	// Check AIDER env vars
 	if env.GetEnv("AIDER") == "1" || env.GetEnv("AIDER_AGENT") == "1" {
 		return true, nil
@@ -53,7 +54,7 @@ func (a *AiderAgent) Detect(ctx context.Context, env Environment) (bool, error) 
 }
 
 // UserConfigPath returns the Aider user configuration directory.
-func (a *AiderAgent) UserConfigPath(env Environment) (string, error) {
+func (a *AiderAgent) UserConfigPath(env agentx.Environment) (string, error) {
 	home, err := env.HomeDir()
 	if err != nil {
 		return "", err
@@ -72,7 +73,7 @@ func (a *AiderAgent) ContextFiles() []string {
 }
 
 // IsInstalled checks if Aider is installed on the system.
-func (a *AiderAgent) IsInstalled(ctx context.Context, env Environment) (bool, error) {
+func (a *AiderAgent) IsInstalled(ctx context.Context, env agentx.Environment) (bool, error) {
 	// Check if aider is in PATH
 	if _, err := env.LookPath("aider"); err == nil {
 		return true, nil
@@ -90,4 +91,4 @@ func (a *AiderAgent) IsInstalled(ctx context.Context, env Environment) (bool, er
 	return false, nil
 }
 
-var _ Agent = (*AiderAgent)(nil)
+var _ agentx.Agent = (*AiderAgent)(nil)

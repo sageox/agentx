@@ -1,6 +1,7 @@
-package agentx
+package agents
 
 import (
+	"github.com/sageox/agentx"
 	"context"
 	"path/filepath"
 
@@ -14,8 +15,8 @@ func NewCodyAgent() *CodyAgent {
 	return &CodyAgent{}
 }
 
-func (a *CodyAgent) Type() AgentType {
-	return AgentTypeCody
+func (a *CodyAgent) Type() agentx.AgentType {
+	return agentx.AgentTypeCody
 }
 
 func (a *CodyAgent) Name() string {
@@ -31,7 +32,7 @@ func (a *CodyAgent) URL() string {
 // Detection methods:
 //   - CODY_AGENT=1
 //   - AGENT_ENV=cody
-func (a *CodyAgent) Detect(ctx context.Context, env Environment) (bool, error) {
+func (a *CodyAgent) Detect(ctx context.Context, env agentx.Environment) (bool, error) {
 	// Check CODY env var
 	if env.GetEnv("CODY_AGENT") == "1" {
 		return true, nil
@@ -46,7 +47,7 @@ func (a *CodyAgent) Detect(ctx context.Context, env Environment) (bool, error) {
 }
 
 // UserConfigPath returns the Cody user configuration directory.
-func (a *CodyAgent) UserConfigPath(env Environment) (string, error) {
+func (a *CodyAgent) UserConfigPath(env agentx.Environment) (string, error) {
 	configDir, err := env.ConfigDir()
 	if err != nil {
 		return "", err
@@ -65,7 +66,7 @@ func (a *CodyAgent) ContextFiles() []string {
 }
 
 // IsInstalled checks if Cody is installed on the system.
-func (a *CodyAgent) IsInstalled(ctx context.Context, env Environment) (bool, error) {
+func (a *CodyAgent) IsInstalled(ctx context.Context, env agentx.Environment) (bool, error) {
 	// Check if cody is in PATH
 	if _, err := env.LookPath("cody"); err == nil {
 		return true, nil
@@ -83,4 +84,4 @@ func (a *CodyAgent) IsInstalled(ctx context.Context, env Environment) (bool, err
 	return false, nil
 }
 
-var _ Agent = (*CodyAgent)(nil)
+var _ agentx.Agent = (*CodyAgent)(nil)
