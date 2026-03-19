@@ -1,6 +1,7 @@
-package agentx
+package agents
 
 import (
+	"github.com/sageox/agentx"
 	"context"
 	"path/filepath"
 
@@ -14,8 +15,8 @@ func NewCodePuppyAgent() *CodePuppyAgent {
 	return &CodePuppyAgent{}
 }
 
-func (a *CodePuppyAgent) Type() AgentType {
-	return AgentTypeCodePuppy
+func (a *CodePuppyAgent) Type() agentx.AgentType {
+	return agentx.AgentTypeCodePuppy
 }
 
 func (a *CodePuppyAgent) Name() string {
@@ -31,7 +32,7 @@ func (a *CodePuppyAgent) URL() string {
 // Detection methods:
 //   - CODE_PUPPY=1 or CODE_PUPPY_AGENT=1
 //   - AGENT_ENV=code-puppy or codepuppy
-func (a *CodePuppyAgent) Detect(ctx context.Context, env Environment) (bool, error) {
+func (a *CodePuppyAgent) Detect(ctx context.Context, env agentx.Environment) (bool, error) {
 	// Check CODE_PUPPY env vars
 	if env.GetEnv("CODE_PUPPY") == "1" || env.GetEnv("CODE_PUPPY_AGENT") == "1" {
 		return true, nil
@@ -48,7 +49,7 @@ func (a *CodePuppyAgent) Detect(ctx context.Context, env Environment) (bool, err
 }
 
 // UserConfigPath returns the Code Puppy user configuration directory.
-func (a *CodePuppyAgent) UserConfigPath(env Environment) (string, error) {
+func (a *CodePuppyAgent) UserConfigPath(env agentx.Environment) (string, error) {
 	configDir, err := env.ConfigDir()
 	if err != nil {
 		return "", err
@@ -67,7 +68,7 @@ func (a *CodePuppyAgent) ContextFiles() []string {
 }
 
 // IsInstalled checks if Code Puppy is installed on the system.
-func (a *CodePuppyAgent) IsInstalled(ctx context.Context, env Environment) (bool, error) {
+func (a *CodePuppyAgent) IsInstalled(ctx context.Context, env agentx.Environment) (bool, error) {
 	// Check if codepuppy is in PATH
 	if _, err := env.LookPath("codepuppy"); err == nil {
 		return true, nil
@@ -90,4 +91,4 @@ func (a *CodePuppyAgent) IsInstalled(ctx context.Context, env Environment) (bool
 	return false, nil
 }
 
-var _ Agent = (*CodePuppyAgent)(nil)
+var _ agentx.Agent = (*CodePuppyAgent)(nil)

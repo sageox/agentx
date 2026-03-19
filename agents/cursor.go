@@ -1,6 +1,7 @@
-package agentx
+package agents
 
 import (
+	"github.com/sageox/agentx"
 	"context"
 	"path/filepath"
 	"strings"
@@ -15,8 +16,8 @@ func NewCursorAgent() *CursorAgent {
 	return &CursorAgent{}
 }
 
-func (a *CursorAgent) Type() AgentType {
-	return AgentTypeCursor
+func (a *CursorAgent) Type() agentx.AgentType {
+	return agentx.AgentTypeCursor
 }
 
 func (a *CursorAgent) Name() string {
@@ -33,7 +34,7 @@ func (a *CursorAgent) URL() string {
 //   - CURSOR_AGENT=1 (future standard)
 //   - AGENT_ENV=cursor
 //   - Running from cursor CLI (heuristic)
-func (a *CursorAgent) Detect(ctx context.Context, env Environment) (bool, error) {
+func (a *CursorAgent) Detect(ctx context.Context, env agentx.Environment) (bool, error) {
 	// Check explicit CURSOR_AGENT env var (future standard)
 	if env.GetEnv("CURSOR_AGENT") == "1" {
 		return true, nil
@@ -53,7 +54,7 @@ func (a *CursorAgent) Detect(ctx context.Context, env Environment) (bool, error)
 }
 
 // UserConfigPath returns the Cursor user configuration directory (~/.cursor).
-func (a *CursorAgent) UserConfigPath(env Environment) (string, error) {
+func (a *CursorAgent) UserConfigPath(env agentx.Environment) (string, error) {
 	home, err := env.HomeDir()
 	if err != nil {
 		return "", err
@@ -72,7 +73,7 @@ func (a *CursorAgent) ContextFiles() []string {
 }
 
 // IsInstalled checks if Cursor is installed on the system.
-func (a *CursorAgent) IsInstalled(ctx context.Context, env Environment) (bool, error) {
+func (a *CursorAgent) IsInstalled(ctx context.Context, env agentx.Environment) (bool, error) {
 	// Check if cursor CLI is in PATH
 	if _, err := env.LookPath("cursor"); err == nil {
 		return true, nil
@@ -97,4 +98,4 @@ func (a *CursorAgent) IsInstalled(ctx context.Context, env Environment) (bool, e
 	return false, nil
 }
 
-var _ Agent = (*CursorAgent)(nil)
+var _ agentx.Agent = (*CursorAgent)(nil)

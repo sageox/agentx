@@ -1,6 +1,7 @@
-package agentx
+package agents
 
 import (
+	"github.com/sageox/agentx"
 	"context"
 	"path/filepath"
 
@@ -14,8 +15,8 @@ func NewKiroAgent() *KiroAgent {
 	return &KiroAgent{}
 }
 
-func (a *KiroAgent) Type() AgentType {
-	return AgentTypeKiro
+func (a *KiroAgent) Type() agentx.AgentType {
+	return agentx.AgentTypeKiro
 }
 
 func (a *KiroAgent) Name() string {
@@ -31,7 +32,7 @@ func (a *KiroAgent) URL() string {
 // Detection methods:
 //   - KIRO_AGENT=1 or KIRO=1
 //   - AGENT_ENV=kiro
-func (a *KiroAgent) Detect(ctx context.Context, env Environment) (bool, error) {
+func (a *KiroAgent) Detect(ctx context.Context, env agentx.Environment) (bool, error) {
 	// Check KIRO env vars
 	if env.GetEnv("KIRO_AGENT") == "1" || env.GetEnv("KIRO") == "1" {
 		return true, nil
@@ -46,7 +47,7 @@ func (a *KiroAgent) Detect(ctx context.Context, env Environment) (bool, error) {
 }
 
 // UserConfigPath returns the Kiro user configuration directory.
-func (a *KiroAgent) UserConfigPath(env Environment) (string, error) {
+func (a *KiroAgent) UserConfigPath(env agentx.Environment) (string, error) {
 	home, err := env.HomeDir()
 	if err != nil {
 		return "", err
@@ -66,7 +67,7 @@ func (a *KiroAgent) ContextFiles() []string {
 }
 
 // IsInstalled checks if Kiro is installed on the system.
-func (a *KiroAgent) IsInstalled(ctx context.Context, env Environment) (bool, error) {
+func (a *KiroAgent) IsInstalled(ctx context.Context, env agentx.Environment) (bool, error) {
 	// Check if kiro is in PATH
 	if _, err := env.LookPath("kiro"); err == nil {
 		return true, nil
@@ -91,4 +92,4 @@ func (a *KiroAgent) IsInstalled(ctx context.Context, env Environment) (bool, err
 	return false, nil
 }
 
-var _ Agent = (*KiroAgent)(nil)
+var _ agentx.Agent = (*KiroAgent)(nil)

@@ -1,6 +1,7 @@
-package agentx
+package agents
 
 import (
+	"github.com/sageox/agentx"
 	"context"
 	"path/filepath"
 
@@ -14,8 +15,8 @@ func NewOpenCodeAgent() *OpenCodeAgent {
 	return &OpenCodeAgent{}
 }
 
-func (a *OpenCodeAgent) Type() AgentType {
-	return AgentTypeOpenCode
+func (a *OpenCodeAgent) Type() agentx.AgentType {
+	return agentx.AgentTypeOpenCode
 }
 
 func (a *OpenCodeAgent) Name() string {
@@ -31,7 +32,7 @@ func (a *OpenCodeAgent) URL() string {
 // Detection methods:
 //   - OPENCODE=1 or OPENCODE_AGENT=1
 //   - AGENT_ENV=opencode
-func (a *OpenCodeAgent) Detect(ctx context.Context, env Environment) (bool, error) {
+func (a *OpenCodeAgent) Detect(ctx context.Context, env agentx.Environment) (bool, error) {
 	// Check OPENCODE env vars
 	if env.GetEnv("OPENCODE") == "1" || env.GetEnv("OPENCODE_AGENT") == "1" {
 		return true, nil
@@ -46,7 +47,7 @@ func (a *OpenCodeAgent) Detect(ctx context.Context, env Environment) (bool, erro
 }
 
 // UserConfigPath returns the OpenCode user configuration directory.
-func (a *OpenCodeAgent) UserConfigPath(env Environment) (string, error) {
+func (a *OpenCodeAgent) UserConfigPath(env agentx.Environment) (string, error) {
 	home, err := env.HomeDir()
 	if err != nil {
 		return "", err
@@ -65,7 +66,7 @@ func (a *OpenCodeAgent) ContextFiles() []string {
 }
 
 // IsInstalled checks if OpenCode is installed on the system.
-func (a *OpenCodeAgent) IsInstalled(ctx context.Context, env Environment) (bool, error) {
+func (a *OpenCodeAgent) IsInstalled(ctx context.Context, env agentx.Environment) (bool, error) {
 	// Check if opencode is in PATH
 	if _, err := env.LookPath("opencode"); err == nil {
 		return true, nil
@@ -83,4 +84,4 @@ func (a *OpenCodeAgent) IsInstalled(ctx context.Context, env Environment) (bool,
 	return false, nil
 }
 
-var _ Agent = (*OpenCodeAgent)(nil)
+var _ agentx.Agent = (*OpenCodeAgent)(nil)

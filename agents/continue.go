@@ -1,6 +1,7 @@
-package agentx
+package agents
 
 import (
+	"github.com/sageox/agentx"
 	"context"
 	"path/filepath"
 
@@ -14,8 +15,8 @@ func NewContinueAgent() *ContinueAgent {
 	return &ContinueAgent{}
 }
 
-func (a *ContinueAgent) Type() AgentType {
-	return AgentTypeContinue
+func (a *ContinueAgent) Type() agentx.AgentType {
+	return agentx.AgentTypeContinue
 }
 
 func (a *ContinueAgent) Name() string {
@@ -31,7 +32,7 @@ func (a *ContinueAgent) URL() string {
 // Detection methods:
 //   - CONTINUE_AGENT=1
 //   - AGENT_ENV=continue
-func (a *ContinueAgent) Detect(ctx context.Context, env Environment) (bool, error) {
+func (a *ContinueAgent) Detect(ctx context.Context, env agentx.Environment) (bool, error) {
 	// Check CONTINUE env var
 	if env.GetEnv("CONTINUE_AGENT") == "1" {
 		return true, nil
@@ -46,7 +47,7 @@ func (a *ContinueAgent) Detect(ctx context.Context, env Environment) (bool, erro
 }
 
 // UserConfigPath returns the Continue user configuration directory.
-func (a *ContinueAgent) UserConfigPath(env Environment) (string, error) {
+func (a *ContinueAgent) UserConfigPath(env agentx.Environment) (string, error) {
 	home, err := env.HomeDir()
 	if err != nil {
 		return "", err
@@ -65,7 +66,7 @@ func (a *ContinueAgent) ContextFiles() []string {
 }
 
 // IsInstalled checks if Continue is installed on the system.
-func (a *ContinueAgent) IsInstalled(ctx context.Context, env Environment) (bool, error) {
+func (a *ContinueAgent) IsInstalled(ctx context.Context, env agentx.Environment) (bool, error) {
 	// Check if continue is in PATH (note: may conflict with shell builtin)
 	if _, err := env.LookPath("continue"); err == nil {
 		return true, nil
@@ -83,4 +84,4 @@ func (a *ContinueAgent) IsInstalled(ctx context.Context, env Environment) (bool,
 	return false, nil
 }
 
-var _ Agent = (*ContinueAgent)(nil)
+var _ agentx.Agent = (*ContinueAgent)(nil)
