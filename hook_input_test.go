@@ -114,6 +114,55 @@ func TestReadHookInput_RawBytesPreserved(t *testing.T) {
 	}
 }
 
+func TestReadHookInput_ExactlyAtLimit(t *testing.T) {
+	// Create a payload that's exactly at the 256KB limit
+	prefix := `{"session_id":"s1","hook_event_name":"PostToolUse","tool_response":"`
+	suffix := `"}`
+	overhead := len(prefix) + len(suffix)
+	filler := strings.Repeat("x", 256*1024-overhead)
+	payload := prefix + filler + suffix
+
+	if len(payload) != 256*1024 {
+		t.Fatalf("payload length = %d, want %d", len(payload), 256*1024)
+	}
+
+	input := ReadHookInput(strings.NewReader(payload))
+	if input == nil {
+		t.Fatal("ReadHookInput() = nil, want non-nil for payload exactly at limit")
+	}
+	if input.SessionID != "s1" {
+		t.Errorf("session_id = %q, want %q", input.SessionID, "s1")
+	}
+}
+
+func TestReadHookInput_ExceedsLimit(t *testing.T) {
+	// Create a payload that exceeds the 256KB limit
+	prefix := `{"session_id":"s1","hook_event_name":"PostToolUse","tool_response":"`
+	suffix := `"}`
+	overhead := len(prefix) + len(suffix)
+	filler := strings.Repeat("x", 256*1024-overhead+100)
+	payload := prefix + filler + suffix
+
+	if len(payload) <= 256*1024 {
+		t.Fatalf("payload length = %d, want > %d", len(payload), 256*1024)
+	}
+
+	// Truncated JSON can't parse
+	input := ReadHookInput(strings.NewReader(payload))
+	if input != nil {
+		t.Error("ReadHookInput() should return nil for truncated JSON")
+	}
+}
+
+func TestReadHookInput_TruncatedJSON(t *testing.T) {
+	// Valid JSON start but cut off mid-field
+	payload := `{"session_id":"s1","hook_event_name":"PostToo`
+	input := ReadHookInput(strings.NewReader(payload))
+	if input != nil {
+		t.Error("ReadHookInput() should return nil for truncated JSON")
+	}
+}
+
 func TestReadHookInput_LargePayload(t *testing.T) {
 	// simulate a large tool response that would span multiple pipe reads
 	largeOutput := strings.Repeat("x", 100000) // 100KB

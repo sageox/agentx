@@ -462,6 +462,34 @@ func TestClaudeCode_EncodeDecodePath(t *testing.T) {
 	})
 }
 
+func TestEncodeProjectPath_WithHyphens(t *testing.T) {
+	// Hyphens are NOT escaped — this is a known limitation matching Claude Code's behavior
+	assert.Equal(t, "-Users-my-name-code", encodeProjectPath("/Users/my-name/code"))
+	// Note: this produces the same encoding as "/Users/my/name/code"
+	assert.Equal(t, "-Users-my-name-code", encodeProjectPath("/Users/my/name/code"))
+}
+
+func TestDecodeProjectPath_LossyWithHyphens(t *testing.T) {
+	// Known limitation: hyphens in original path segments become slashes
+	encoded := encodeProjectPath("/Users/my-name/code")
+	decoded := decodeProjectPath(encoded)
+	// This is WRONG but matches Claude Code's behavior
+	assert.Equal(t, "/Users/my/name/code", decoded)
+	assert.NotEqual(t, "/Users/my-name/code", decoded, "round-trip is lossy for hyphenated paths")
+}
+
+func TestEncodeDecodeRoundTrip_NoHyphens(t *testing.T) {
+	// Round-trip IS lossless for paths without hyphens
+	paths := []string{
+		"/Users/ryan/code/project",
+		"/home/user/workspace",
+		"/tmp/test",
+	}
+	for _, path := range paths {
+		assert.Equal(t, path, decodeProjectPath(encodeProjectPath(path)))
+	}
+}
+
 // --- Claude Code: file-based ListProjects ---
 
 func TestClaudeCode_ListProjects_MultipleProjects(t *testing.T) {

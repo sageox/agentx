@@ -3,6 +3,8 @@ package agentx
 import (
 	"context"
 	"errors"
+	"fmt"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -200,7 +202,7 @@ func TestBuildEventPhaseMap_AliasKeys(t *testing.T) {
 		aliases: []string{"claude-code", "claudecode"},
 	})
 
-	result := reg.buildEventPhaseMap()
+	result := reg.BuildEventPhaseMap()
 	// keys should be aliases, not agent type slug
 	assert.Len(t, result, 2)
 	assert.Contains(t, result, "claude-code")
@@ -217,7 +219,7 @@ func TestBuildEventPhaseMap_NoMappers(t *testing.T) {
 		name:      "Plain Agent",
 	})
 
-	result := reg.buildEventPhaseMap()
+	result := reg.BuildEventPhaseMap()
 	assert.Empty(t, result)
 }
 
@@ -234,7 +236,7 @@ func TestBuildEventPhaseMap_MultipleAgents(t *testing.T) {
 		aliases:             []string{"windsurf"},
 	})
 
-	result := reg.buildEventPhaseMap()
+	result := reg.BuildEventPhaseMap()
 	assert.Len(t, result, 2)
 	assert.Equal(t, PhaseStart, result["claude-code"][HookEventSessionStart])
 	assert.Equal(t, PhaseBeforeTool, result["windsurf"][WindsurfEventPreReadCode])
@@ -249,8 +251,8 @@ func TestResolveAgentENV_Match(t *testing.T) {
 		aliases:             []string{"claude-code", "claude"},
 	})
 
-	assert.Equal(t, AgentTypeClaudeCode, reg.resolveAgentENV("claude-code"))
-	assert.Equal(t, AgentTypeClaudeCode, reg.resolveAgentENV("claude"))
+	assert.Equal(t, AgentTypeClaudeCode, reg.ResolveAgentENV("claude-code"))
+	assert.Equal(t, AgentTypeClaudeCode, reg.ResolveAgentENV("claude"))
 }
 
 func TestResolveAgentENV_Unknown(t *testing.T) {
@@ -260,8 +262,8 @@ func TestResolveAgentENV_Unknown(t *testing.T) {
 		aliases:             []string{"claude-code"},
 	})
 
-	assert.Equal(t, AgentTypeUnknown, reg.resolveAgentENV("unknown"))
-	assert.Equal(t, AgentTypeUnknown, reg.resolveAgentENV(""))
+	assert.Equal(t, AgentTypeUnknown, reg.ResolveAgentENV("unknown"))
+	assert.Equal(t, AgentTypeUnknown, reg.ResolveAgentENV(""))
 }
 
 func TestResolveAgentENV_NoLifecycleAgents(t *testing.T) {
@@ -271,7 +273,7 @@ func TestResolveAgentENV_NoLifecycleAgents(t *testing.T) {
 		name:      "Plain",
 	})
 
-	assert.Equal(t, AgentTypeUnknown, reg.resolveAgentENV("cursor"))
+	assert.Equal(t, AgentTypeUnknown, reg.ResolveAgentENV("cursor"))
 }
 
 // --- HookSupportMatrix tests (using private registry methods) ---
@@ -287,7 +289,7 @@ func TestHookSupportMatrix_SingleAgent(t *testing.T) {
 		aliases: []string{"claude-code"},
 	})
 
-	matrix := reg.hookSupportMatrix()
+	matrix := reg.HookSupportMatrix()
 	assert.Len(t, matrix, 1)
 	assert.Equal(t, AgentTypeClaudeCode, matrix[0].AgentType)
 	assert.Equal(t, "Agent", matrix[0].AgentName)
@@ -302,7 +304,7 @@ func TestHookSupportMatrix_NoLifecycleAgents(t *testing.T) {
 		name:      "Plain",
 	})
 
-	matrix := reg.hookSupportMatrix()
+	matrix := reg.HookSupportMatrix()
 	assert.Empty(t, matrix)
 }
 
@@ -319,7 +321,7 @@ func TestHookSupportMatrix_MixedAgents(t *testing.T) {
 		name:      "Plain",
 	})
 
-	matrix := reg.hookSupportMatrix()
+	matrix := reg.HookSupportMatrix()
 	assert.Len(t, matrix, 1)
 	assert.Equal(t, AgentTypeClaudeCode, matrix[0].AgentType)
 }
@@ -498,4 +500,68 @@ func TestOrchestratorType_Detected(t *testing.T) {
 	})
 
 	assert.Equal(t, "conductor", OrchestratorType())
+}
+
+func TestRegistry_ConcurrentAccess(t *testing.T) {
+	reg := NewRegistry()
+	var wg sync.WaitGroup
+	const n = 100
+
+	for i := 0; i < n; i++ {
+		wg.Add(3)
+		go func(i int) {
+			defer wg.Done()
+			_ = reg.Register(&mockDetectableAgent{
+				agentType: AgentType(fmt.Sprintf("stress-%d", i)),
+				name:      fmt.Sprintf("stress-agent-%d", i),
+				role:      RoleAgent,
+			})
+		}(i)
+		go func() {
+			defer wg.Done()
+			_ = reg.List()
+		}()
+		go func(i int) {
+			defer wg.Done()
+			_, _ = reg.Get(AgentType(fmt.Sprintf("stress-%d", i)))
+		}(i)
+	}
+	wg.Wait()
+
+	agents := reg.List()
+	assert.Equal(t, n, len(agents))
+}
+
+func TestRegistry_ConcurrentBuildEventPhaseMap(t *testing.T) {
+	reg := NewRegistry()
+	// register some lifecycle agents
+	for i := 0; i < 10; i++ {
+		_ = reg.Register(&mockLifecycleDetectableAgent{
+			mockDetectableAgent: mockDetectableAgent{
+				agentType: AgentType(fmt.Sprintf("lifecycle-%d", i)),
+				name:      fmt.Sprintf("lifecycle-agent-%d", i),
+				role:      RoleAgent,
+			},
+			phases:  EventPhaseMap{"event": PhaseStart},
+			aliases: []string{fmt.Sprintf("alias-%d", i)},
+		})
+	}
+
+	var wg sync.WaitGroup
+	for i := 0; i < 50; i++ {
+		wg.Add(3)
+		go func() {
+			defer wg.Done()
+			_ = reg.BuildEventPhaseMap()
+		}()
+		go func() {
+			defer wg.Done()
+			_ = reg.ResolveAgentENV("alias-5")
+		}()
+		go func() {
+			defer wg.Done()
+			_ = reg.HookSupportMatrix()
+		}()
+	}
+	wg.Wait()
 }

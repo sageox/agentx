@@ -14,11 +14,23 @@ import (
 // Commands are installed to .claude/commands/ in the project root.
 type ClaudeCodeCommandManager struct {
 	StampPrefix string
+	env         agentx.Environment
 }
 
 // NewClaudeCodeCommandManager creates a new Claude Code command manager.
 func NewClaudeCodeCommandManager() *ClaudeCodeCommandManager {
-	return &ClaudeCodeCommandManager{StampPrefix: agentx.DefaultStampPrefix}
+	return &ClaudeCodeCommandManager{
+		StampPrefix: agentx.DefaultStampPrefix,
+		env:         agentx.NewSystemEnvironment(),
+	}
+}
+
+// NewClaudeCodeCommandManagerWithEnv creates a command manager with a custom environment.
+func NewClaudeCodeCommandManagerWithEnv(env agentx.Environment) *ClaudeCodeCommandManager {
+	return &ClaudeCodeCommandManager{
+		StampPrefix: agentx.DefaultStampPrefix,
+		env:         env,
+	}
 }
 
 // CommandDir returns the path to the Claude Code command directory.
@@ -33,7 +45,7 @@ func (m *ClaudeCodeCommandManager) CommandDir(projectRoot string) string {
 // Each file is stamped with a content hash and version on the first line.
 func (m *ClaudeCodeCommandManager) Install(_ context.Context, projectRoot string, commands []agentx.CommandFile, overwrite bool) ([]string, error) {
 	cmdDir := m.CommandDir(projectRoot)
-	if err := os.MkdirAll(cmdDir, 0o755); err != nil {
+	if err := m.env.MkdirAll(cmdDir, 0o755); err != nil {
 		return nil, fmt.Errorf("create command directory: %w", err)
 	}
 
@@ -42,7 +54,7 @@ func (m *ClaudeCodeCommandManager) Install(_ context.Context, projectRoot string
 		dstPath := filepath.Join(cmdDir, cmd.Name)
 
 		var existing []byte
-		if data, err := os.ReadFile(dstPath); err == nil {
+		if data, err := m.env.ReadFile(dstPath); err == nil {
 			existing = data
 		}
 
@@ -51,7 +63,7 @@ func (m *ClaudeCodeCommandManager) Install(_ context.Context, projectRoot string
 		}
 
 		stamped := agentx.StampedContent(cmd.Content, cmd.Version, m.StampPrefix)
-		if err := os.WriteFile(dstPath, stamped, 0o644); err != nil {
+		if err := m.env.WriteFile(dstPath, stamped, 0o644); err != nil {
 			return written, fmt.Errorf("write command file %s: %w", cmd.Name, err)
 		}
 		written = append(written, cmd.Name)
@@ -64,7 +76,7 @@ func (m *ClaudeCodeCommandManager) Install(_ context.Context, projectRoot string
 func (m *ClaudeCodeCommandManager) Uninstall(_ context.Context, projectRoot string, prefix string) ([]string, error) {
 	cmdDir := m.CommandDir(projectRoot)
 
-	entries, err := os.ReadDir(cmdDir)
+	entries, err := m.env.ReadDir(cmdDir)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
@@ -84,16 +96,16 @@ func (m *ClaudeCodeCommandManager) Uninstall(_ context.Context, projectRoot stri
 		if !strings.HasSuffix(name, ".md") {
 			continue
 		}
-		if err := os.Remove(filepath.Join(cmdDir, name)); err != nil {
+		if err := m.env.Remove(filepath.Join(cmdDir, name)); err != nil {
 			return removed, fmt.Errorf("remove command file %s: %w", name, err)
 		}
 		removed = append(removed, name)
 	}
 
 	// remove empty command directory (best-effort)
-	remaining, _ := os.ReadDir(cmdDir)
+	remaining, _ := m.env.ReadDir(cmdDir)
 	if len(remaining) == 0 {
-		os.Remove(cmdDir)
+		m.env.Remove(cmdDir)
 	}
 
 	return removed, nil
@@ -108,7 +120,7 @@ func (m *ClaudeCodeCommandManager) Validate(_ context.Context, projectRoot strin
 
 	for _, cmd := range commands {
 		dstPath := filepath.Join(cmdDir, cmd.Name)
-		existing, err := os.ReadFile(dstPath)
+		existing, err := m.env.ReadFile(dstPath)
 		if err != nil {
 			if os.IsNotExist(err) {
 				missing = append(missing, cmd.Name)

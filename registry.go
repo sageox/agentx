@@ -57,6 +57,7 @@ func (r *registry) Detector() Detector {
 	return &detector{registry: r}
 }
 
+
 // detector implements Detector using a registry.
 type detector struct {
 	registry *registry
@@ -153,10 +154,10 @@ func (d *detector) DetectByType(ctx context.Context, agentType AgentType) (bool,
 // The returned map uses AGENT_ENV aliases as keys (e.g., "claude-code"),
 // not AgentType slugs (e.g., "claude").
 func BuildEventPhaseMap() map[string]EventPhaseMap {
-	return DefaultRegistry.(*registry).buildEventPhaseMap()
+	return DefaultRegistry.BuildEventPhaseMap()
 }
 
-func (r *registry) buildEventPhaseMap() map[string]EventPhaseMap {
+func (r *registry) BuildEventPhaseMap() map[string]EventPhaseMap {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -177,10 +178,10 @@ func (r *registry) buildEventPhaseMap() map[string]EventPhaseMap {
 // ResolveAgentENV resolves an AGENT_ENV string to an AgentType.
 // Returns AgentTypeUnknown if not found.
 func ResolveAgentENV(agentEnv string) AgentType {
-	return DefaultRegistry.(*registry).resolveAgentENV(agentEnv)
+	return DefaultRegistry.ResolveAgentENV(agentEnv)
 }
 
-func (r *registry) resolveAgentENV(agentEnv string) AgentType {
+func (r *registry) ResolveAgentENV(agentEnv string) AgentType {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -210,10 +211,10 @@ type HookSupportEntry struct {
 // that implement LifecycleEventMapper. Each entry shows which phases the agent
 // supports and the native event name for each phase.
 func HookSupportMatrix() []HookSupportEntry {
-	return DefaultRegistry.(*registry).hookSupportMatrix()
+	return DefaultRegistry.HookSupportMatrix()
 }
 
-func (r *registry) hookSupportMatrix() []HookSupportEntry {
+func (r *registry) HookSupportMatrix() []HookSupportEntry {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 

@@ -3,6 +3,7 @@ package agentx
 import (
 	"context"
 	"errors"
+	"os"
 	"os/exec"
 	"testing"
 
@@ -318,4 +319,116 @@ func TestNewMockEnvironment_Defaults(t *testing.T) {
 	assert.Equal(t, "/home/test/.local/share", env.Data)
 	assert.Equal(t, "/home/test/.cache", env.Cache)
 	assert.Equal(t, "linux", env.OS)
+	assert.NotNil(t, env.WrittenFiles)
+	assert.NotNil(t, env.CreatedDirs)
+	assert.NotNil(t, env.RemovedPaths)
+}
+
+// ---------------------------------------------------------------------------
+// MockEnvironment - WriteFile
+// ---------------------------------------------------------------------------
+
+func TestMockEnvironment_WriteFile(t *testing.T) {
+	env := NewMockEnvironment(nil)
+	err := env.WriteFile("/tmp/out.txt", []byte("content"), 0o644)
+	require.NoError(t, err)
+
+	// stored in WrittenFiles
+	assert.Equal(t, []byte("content"), env.WrittenFiles["/tmp/out.txt"])
+
+	// also readable via ReadFile
+	data, err := env.ReadFile("/tmp/out.txt")
+	require.NoError(t, err)
+	assert.Equal(t, []byte("content"), data)
+}
+
+func TestMockEnvironment_WriteFile_Error(t *testing.T) {
+	env := &MockEnvironment{
+		WriteErrors: map[string]error{"/tmp/fail.txt": errors.New("disk full")},
+	}
+	err := env.WriteFile("/tmp/fail.txt", []byte("data"), 0o644)
+	assert.Error(t, err)
+	assert.Equal(t, "disk full", err.Error())
+}
+
+// ---------------------------------------------------------------------------
+// MockEnvironment - ReadDir
+// ---------------------------------------------------------------------------
+
+func TestMockEnvironment_ReadDir(t *testing.T) {
+	env := &MockEnvironment{
+		DirEntries: map[string][]os.DirEntry{
+			"/tmp/dir": {}, // empty but present
+		},
+	}
+	entries, err := env.ReadDir("/tmp/dir")
+	require.NoError(t, err)
+	assert.Empty(t, entries)
+}
+
+func TestMockEnvironment_ReadDir_Missing(t *testing.T) {
+	env := &MockEnvironment{}
+	_, err := env.ReadDir("/tmp/missing")
+	assert.ErrorIs(t, err, os.ErrNotExist)
+}
+
+// ---------------------------------------------------------------------------
+// MockEnvironment - MkdirAll
+// ---------------------------------------------------------------------------
+
+func TestMockEnvironment_MkdirAll(t *testing.T) {
+	env := NewMockEnvironment(nil)
+	err := env.MkdirAll("/tmp/a/b/c", 0o755)
+	require.NoError(t, err)
+
+	assert.True(t, env.CreatedDirs["/tmp/a/b/c"])
+	assert.True(t, env.ExistingDirs["/tmp/a/b/c"])
+	assert.True(t, env.IsDir("/tmp/a/b/c"))
+}
+
+// ---------------------------------------------------------------------------
+// MockEnvironment - Remove
+// ---------------------------------------------------------------------------
+
+func TestMockEnvironment_Remove(t *testing.T) {
+	env := NewMockEnvironment(nil)
+	err := env.Remove("/tmp/file.txt")
+	require.NoError(t, err)
+	assert.True(t, env.RemovedPaths["/tmp/file.txt"])
+}
+
+func TestMockEnvironment_Remove_Error(t *testing.T) {
+	env := &MockEnvironment{
+		RemoveErrors: map[string]error{"/tmp/locked": errors.New("permission denied")},
+	}
+	err := env.Remove("/tmp/locked")
+	assert.Error(t, err)
+	assert.Equal(t, "permission denied", err.Error())
+}
+
+// ---------------------------------------------------------------------------
+// MockEnvironment - Stat
+// ---------------------------------------------------------------------------
+
+func TestMockEnvironment_Stat(t *testing.T) {
+	env := &MockEnvironment{
+		ExistingFiles: map[string]bool{"/tmp/exists.txt": true},
+	}
+
+	// file exists: nil error
+	_, err := env.Stat("/tmp/exists.txt")
+	assert.NoError(t, err)
+
+	// file missing: ErrNotExist
+	_, err = env.Stat("/tmp/missing.txt")
+	assert.ErrorIs(t, err, os.ErrNotExist)
+}
+
+func TestMockEnvironment_Stat_Error(t *testing.T) {
+	env := &MockEnvironment{
+		StatErrors: map[string]error{"/tmp/broken": errors.New("i/o error")},
+	}
+	_, err := env.Stat("/tmp/broken")
+	assert.Error(t, err)
+	assert.Equal(t, "i/o error", err.Error())
 }

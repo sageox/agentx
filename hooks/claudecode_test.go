@@ -17,7 +17,7 @@ func newTestManager(t *testing.T, env agentx.Environment) *ClaudeCodeHookManager
 	t.Helper()
 	tmpDir := t.TempDir()
 	if env == nil {
-		env = agentx.NewMockEnvironment(nil)
+		env = agentx.NewSystemEnvironment()
 	}
 	m := NewClaudeCodeHookManager(env)
 	m.configPath = tmpDir
@@ -681,6 +681,27 @@ func TestIsDuplicateRule(t *testing.T) {
 		assert.False(t, isDuplicateRule(existing, newRule))
 	})
 
+	t.Run("order independent match returns true", func(t *testing.T) {
+		existing := []interface{}{
+			map[string]interface{}{
+				"matcher": "test",
+				"hooks": []interface{}{
+					map[string]interface{}{"type": "command", "command": "hook-a"},
+					map[string]interface{}{"type": "command", "command": "hook-b"},
+				},
+			},
+		}
+		// Same hooks, different order
+		newRule := map[string]interface{}{
+			"matcher": "test",
+			"hooks": []map[string]interface{}{
+				{"type": "command", "command": "hook-b"},
+				{"type": "command", "command": "hook-a"},
+			},
+		}
+		assert.True(t, isDuplicateRule(existing, newRule))
+	})
+
 	t.Run("entry hooks not a slice continues without panic", func(t *testing.T) {
 		existing := []interface{}{
 			map[string]interface{}{
@@ -725,8 +746,8 @@ func TestGetConfigPath_FromHomeDir(t *testing.T) {
 
 func TestInstall_MkdirAllFailure(t *testing.T) {
 	ctx := context.Background()
-	env := agentx.NewMockEnvironment(nil)
-	m := NewClaudeCodeHookManager(env)
+	// use SystemEnvironment so real os.MkdirAll fails on a file path
+	m := NewClaudeCodeHookManager(agentx.NewSystemEnvironment())
 
 	// point configPath at a file (not a directory) so MkdirAll fails
 	tmpDir := t.TempDir()

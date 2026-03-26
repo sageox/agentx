@@ -407,15 +407,20 @@ func (p *claudeCodeProvider) messageType(rawType string) MessageType {
 }
 
 // encodeProjectPath encodes a project path for use as a directory name.
+// This matches Claude Code's directory naming in ~/.claude/projects/.
+// WARNING: This encoding is lossy — hyphens in path segments are
+// indistinguishable from path separators after encoding.
+// Example: "/Users/my-name/code" and "/Users/my/name/code" both
+// encode to "-Users-my-name-code".
 func encodeProjectPath(projectPath string) string {
-	// Replace "/" with "-" and other special characters
 	return strings.ReplaceAll(projectPath, "/", "-")
 }
 
-// decodeProjectPath decodes a project path from a directory name.
+// decodeProjectPath decodes a project path from an encoded directory name.
+// WARNING: This decoding is lossy for paths containing hyphens.
+// All dashes are converted to slashes, so paths with original hyphens
+// will be decoded incorrectly. This matches Claude Code's behavior.
 func decodeProjectPath(encoded string) string {
-	// Replace "-" with "/" (simple decoding)
-	// For now, assume the pattern is "-Users-ryan-..."
 	if strings.HasPrefix(encoded, "-") {
 		parts := strings.Split(encoded[1:], "-")
 		return "/" + strings.Join(parts, "/")
