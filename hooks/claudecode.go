@@ -45,7 +45,7 @@ func (m *ClaudeCodeHookManager) Install(ctx context.Context, config agentx.HookC
 	}
 
 	// Ensure .claude directory exists
-	if err := os.MkdirAll(configPath, 0o755); err != nil {
+	if err := m.env.MkdirAll(configPath, 0o755); err != nil {
 		return fmt.Errorf("create claude directory: %w", err)
 	}
 
@@ -96,7 +96,7 @@ func (m *ClaudeCodeHookManager) IsInstalled(ctx context.Context) (bool, error) {
 
 	// Check if MCP config exists with sageox entry
 	mcpPath := filepath.Join(configPath, "mcp_config.json")
-	data, err := os.ReadFile(mcpPath)
+	data, err := m.env.ReadFile(mcpPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return false, nil
@@ -142,7 +142,7 @@ func (m *ClaudeCodeHookManager) installMCPServers(ctx context.Context, servers m
 	var existingConfig map[string]interface{}
 
 	if merge {
-		data, err := os.ReadFile(mcpPath)
+		data, err := m.env.ReadFile(mcpPath)
 		if err != nil && !os.IsNotExist(err) {
 			return fmt.Errorf("read mcp config: %w", err)
 		}
@@ -181,7 +181,7 @@ func (m *ClaudeCodeHookManager) installMCPServers(ctx context.Context, servers m
 		return fmt.Errorf("marshal mcp config: %w", err)
 	}
 
-	if err := os.WriteFile(mcpPath, data, 0o644); err != nil {
+	if err := m.env.WriteFile(mcpPath, data, 0o644); err != nil {
 		return fmt.Errorf("write mcp config: %w", err)
 	}
 
@@ -197,14 +197,14 @@ func (m *ClaudeCodeHookManager) installSystemInstructions(ctx context.Context, i
 	claudeMdPath := filepath.Join(configPath, "CLAUDE.md")
 
 	if merge {
-		existing, err := os.ReadFile(claudeMdPath)
+		existing, err := m.env.ReadFile(claudeMdPath)
 		if err == nil && len(existing) > 0 {
 			// Simple append with separator
 			instructions = string(existing) + "\n\n" + instructions
 		}
 	}
 
-	if err := os.WriteFile(claudeMdPath, []byte(instructions), 0o644); err != nil {
+	if err := m.env.WriteFile(claudeMdPath, []byte(instructions), 0o644); err != nil {
 		return fmt.Errorf("write CLAUDE.md: %w", err)
 	}
 
@@ -227,7 +227,7 @@ func (m *ClaudeCodeHookManager) installEventHooks(_ context.Context, hooks agent
 	var existingConfig map[string]interface{}
 
 	if merge {
-		data, err := os.ReadFile(settingsPath)
+		data, err := m.env.ReadFile(settingsPath)
 		if err != nil && !os.IsNotExist(err) {
 			return fmt.Errorf("read settings: %w", err)
 		}
@@ -292,7 +292,7 @@ func (m *ClaudeCodeHookManager) installEventHooks(_ context.Context, hooks agent
 		return fmt.Errorf("marshal settings: %w", err)
 	}
 
-	if err := os.WriteFile(settingsPath, data, 0o644); err != nil {
+	if err := m.env.WriteFile(settingsPath, data, 0o644); err != nil {
 		return fmt.Errorf("write settings: %w", err)
 	}
 
@@ -326,18 +326,22 @@ func isDuplicateRule(existing []interface{}, newRule map[string]interface{}) boo
 			continue
 		}
 
-		allMatch := true
-		for i, eh := range existingHooks {
+		// Build set of (type, command) pairs from existing hooks
+		existingSet := make(map[string]bool, len(existingHooks))
+		for _, eh := range existingHooks {
 			ehMap, ok := eh.(map[string]interface{})
 			if !ok {
-				allMatch = false
-				break
+				continue
 			}
-			if i >= len(newHooks) {
-				allMatch = false
-				break
-			}
-			if ehMap["command"] != newHooks[i]["command"] || ehMap["type"] != newHooks[i]["type"] {
+			key := fmt.Sprintf("%v|%v", ehMap["type"], ehMap["command"])
+			existingSet[key] = true
+		}
+
+		// Check all new hooks exist in the set
+		allMatch := true
+		for _, nh := range newHooks {
+			key := fmt.Sprintf("%v|%v", nh["type"], nh["command"])
+			if !existingSet[key] {
 				allMatch = false
 				break
 			}
@@ -352,7 +356,7 @@ func isDuplicateRule(existing []interface{}, newRule map[string]interface{}) boo
 }
 
 func (m *ClaudeCodeHookManager) removeSageoxMCPServers(mcpPath string) error {
-	data, err := os.ReadFile(mcpPath)
+	data, err := m.env.ReadFile(mcpPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil
@@ -378,7 +382,7 @@ func (m *ClaudeCodeHookManager) removeSageoxMCPServers(mcpPath string) error {
 		return err
 	}
 
-	return os.WriteFile(mcpPath, newData, 0o644)
+	return m.env.WriteFile(mcpPath, newData, 0o644)
 }
 
 // Ensure ClaudeCodeHookManager implements HookManager.

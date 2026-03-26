@@ -759,4 +759,13 @@ type Registry interface {
 
 	// Detector returns a detector for registered agents
 	Detector() Detector
+
+	// BuildEventPhaseMap builds alias -> event phase map for all LifecycleEventMapper agents.
+	BuildEventPhaseMap() map[string]EventPhaseMap
+
+	// ResolveAgentENV resolves an AGENT_ENV alias to an AgentType.
+	ResolveAgentENV(agentEnv string) AgentType
+
+	// HookSupportMatrix returns hook support entries for all LifecycleEventMapper agents.
+	HookSupportMatrix() []HookSupportEntry
 }

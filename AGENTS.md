@@ -15,6 +15,13 @@ bd close <id>         # Complete work
 bd sync               # Sync with git
 ```
 
+## Code Quality
+
+- **Test coverage target: 85%+ per package.** Run `go test ./... -coverprofile=coverage.out` and verify every package meets the threshold. No test theater — tests must catch real bugs, edge cases, and failure modes.
+- Run `go tool cover -func=coverage.out | tail -1` to check total coverage.
+- Use `agentx.MockEnvironment` for all environment/filesystem mocking in tests.
+- Use table-driven tests for repetitive agent/orchestrator testing patterns.
+
 ## Landing the Plane (Session Completion)
 
 **When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.

@@ -249,3 +249,144 @@ func TestClaudeCodeCommandManager_CommandDir(t *testing.T) {
 	mgr := NewClaudeCodeCommandManager()
 	assert.Equal(t, "/project/.claude/commands", mgr.CommandDir("/project"))
 }
+
+func TestUninstall_SkipsNonMDFiles(t *testing.T) {
+	tmpDir := t.TempDir()
+	mgr := NewClaudeCodeCommandManager()
+	ctx := context.Background()
+
+	cmdDir := mgr.CommandDir(tmpDir)
+	require.NoError(t, os.MkdirAll(cmdDir, 0o755))
+
+	// create a .json file with the matching prefix
+	jsonPath := filepath.Join(cmdDir, "ox-data.json")
+	require.NoError(t, os.WriteFile(jsonPath, []byte(`{"key":"val"}`), 0o644))
+
+	removed, err := mgr.Uninstall(ctx, tmpDir, "ox")
+	require.NoError(t, err)
+	assert.Empty(t, removed, "non-.md file should not be removed")
+
+	_, err = os.Stat(jsonPath)
+	assert.NoError(t, err, ".json file should still exist")
+}
+
+func TestUninstall_SkipsMismatchedPrefix(t *testing.T) {
+	tmpDir := t.TempDir()
+	mgr := NewClaudeCodeCommandManager()
+	ctx := context.Background()
+
+	cmdDir := mgr.CommandDir(tmpDir)
+	require.NoError(t, os.MkdirAll(cmdDir, 0o755))
+
+	// create .md files without the target prefix
+	require.NoError(t, os.WriteFile(filepath.Join(cmdDir, "other-cmd.md"), []byte("# Other"), 0o644))
+	require.NoError(t, os.WriteFile(filepath.Join(cmdDir, "custom.md"), []byte("# Custom"), 0o644))
+
+	removed, err := mgr.Uninstall(ctx, tmpDir, "ox")
+	require.NoError(t, err)
+	assert.Empty(t, removed, "files without matching prefix should not be removed")
+
+	_, err = os.Stat(filepath.Join(cmdDir, "other-cmd.md"))
+	assert.NoError(t, err)
+	_, err = os.Stat(filepath.Join(cmdDir, "custom.md"))
+	assert.NoError(t, err)
+}
+
+func TestUninstall_SkipsDirectories(t *testing.T) {
+	tmpDir := t.TempDir()
+	mgr := NewClaudeCodeCommandManager()
+	ctx := context.Background()
+
+	cmdDir := mgr.CommandDir(tmpDir)
+	require.NoError(t, os.MkdirAll(cmdDir, 0o755))
+
+	// create a subdirectory with a matching name
+	subDir := filepath.Join(cmdDir, "ox-subdir.md")
+	require.NoError(t, os.MkdirAll(subDir, 0o755))
+
+	removed, err := mgr.Uninstall(ctx, tmpDir, "ox")
+	require.NoError(t, err)
+	assert.Empty(t, removed, "directories should be skipped")
+
+	info, err := os.Stat(subDir)
+	require.NoError(t, err)
+	assert.True(t, info.IsDir(), "directory should still exist")
+}
+
+func TestUninstall_CleansEmptyDir(t *testing.T) {
+	tmpDir := t.TempDir()
+	mgr := NewClaudeCodeCommandManager()
+	ctx := context.Background()
+
+	// install a single file, then uninstall it
+	commands := []agentx.CommandFile{
+		{Name: "ox-only.md", Content: []byte("# Only"), Version: "0.12.0"},
+	}
+	_, err := mgr.Install(ctx, tmpDir, commands, false)
+	require.NoError(t, err)
+
+	removed, err := mgr.Uninstall(ctx, tmpDir, "ox")
+	require.NoError(t, err)
+	assert.Equal(t, []string{"ox-only.md"}, removed)
+
+	// command directory should be removed since it's now empty
+	_, err = os.Stat(mgr.CommandDir(tmpDir))
+	assert.True(t, os.IsNotExist(err), "empty command directory should be removed")
+}
+
+func TestUninstall_NonExistentDir(t *testing.T) {
+	tmpDir := t.TempDir()
+	mgr := NewClaudeCodeCommandManager()
+	ctx := context.Background()
+
+	// command dir doesn't exist at all
+	removed, err := mgr.Uninstall(ctx, tmpDir, "ox")
+	require.NoError(t, err)
+	assert.Nil(t, removed)
+}
+
+func TestInstall_WriteError(t *testing.T) {
+	tmpDir := t.TempDir()
+	mgr := NewClaudeCodeCommandManager()
+	ctx := context.Background()
+
+	cmdDir := mgr.CommandDir(tmpDir)
+	require.NoError(t, os.MkdirAll(cmdDir, 0o755))
+
+	// make the command directory read-only so WriteFile fails
+	require.NoError(t, os.Chmod(cmdDir, 0o555))
+	t.Cleanup(func() {
+		os.Chmod(cmdDir, 0o755) // restore so cleanup can remove it
+	})
+
+	commands := []agentx.CommandFile{
+		{Name: "ox-test.md", Content: []byte("# Test"), Version: "0.12.0"},
+	}
+	_, err := mgr.Install(ctx, tmpDir, commands, false)
+	assert.Error(t, err, "should fail when directory is read-only")
+	assert.Contains(t, err.Error(), "write command file")
+}
+
+func TestValidate_ReadError(t *testing.T) {
+	tmpDir := t.TempDir()
+	mgr := NewClaudeCodeCommandManager()
+	ctx := context.Background()
+
+	cmdDir := mgr.CommandDir(tmpDir)
+	require.NoError(t, os.MkdirAll(cmdDir, 0o755))
+
+	// create a file but make it unreadable
+	filePath := filepath.Join(cmdDir, "ox-test.md")
+	require.NoError(t, os.WriteFile(filePath, []byte("content"), 0o644))
+	require.NoError(t, os.Chmod(filePath, 0o000))
+	t.Cleanup(func() {
+		os.Chmod(filePath, 0o644)
+	})
+
+	commands := []agentx.CommandFile{
+		{Name: "ox-test.md", Content: []byte("# Test"), Version: "0.12.0"},
+	}
+	_, _, err := mgr.Validate(ctx, tmpDir, commands)
+	assert.Error(t, err, "should fail when file is unreadable")
+	assert.Contains(t, err.Error(), "read command file")
+}

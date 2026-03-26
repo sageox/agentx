@@ -47,6 +47,21 @@ type Environment interface {
 
 	// ReadFile reads a file and returns its contents.
 	ReadFile(path string) ([]byte, error)
+
+	// WriteFile writes data to a file, creating it if necessary.
+	WriteFile(path string, data []byte, perm os.FileMode) error
+
+	// ReadDir reads a directory and returns its entries.
+	ReadDir(path string) ([]os.DirEntry, error)
+
+	// MkdirAll creates a directory and all parents.
+	MkdirAll(path string, perm os.FileMode) error
+
+	// Remove removes a file or empty directory.
+	Remove(path string) error
+
+	// Stat returns file info.
+	Stat(path string) (os.FileInfo, error)
 }
 
 // SystemEnvironment implements Environment using the real system.
@@ -168,6 +183,26 @@ func (e *SystemEnvironment) ReadFile(path string) ([]byte, error) {
 	return os.ReadFile(path)
 }
 
+func (e *SystemEnvironment) WriteFile(path string, data []byte, perm os.FileMode) error {
+	return os.WriteFile(path, data, perm)
+}
+
+func (e *SystemEnvironment) ReadDir(path string) ([]os.DirEntry, error) {
+	return os.ReadDir(path)
+}
+
+func (e *SystemEnvironment) MkdirAll(path string, perm os.FileMode) error {
+	return os.MkdirAll(path, perm)
+}
+
+func (e *SystemEnvironment) Remove(path string) error {
+	return os.Remove(path)
+}
+
+func (e *SystemEnvironment) Stat(path string) (os.FileInfo, error) {
+	return os.Stat(path)
+}
+
 // MockEnvironment is a test implementation of Environment.
 type MockEnvironment struct {
 	EnvVars       map[string]string
@@ -183,17 +218,27 @@ type MockEnvironment struct {
 	PathBinaries  map[string]string  // keyed by binary name -> path
 	ExistingFiles map[string]bool    // keyed by path
 	ExistingDirs  map[string]bool    // keyed by path
+	WrittenFiles  map[string][]byte  // tracks WriteFile calls
+	CreatedDirs   map[string]bool    // tracks MkdirAll calls
+	RemovedPaths  map[string]bool    // tracks Remove calls
+	WriteErrors   map[string]error   // inject write errors by path
+	RemoveErrors  map[string]error   // inject remove errors by path
+	DirEntries    map[string][]os.DirEntry // mock ReadDir results
+	StatErrors    map[string]error   // inject stat errors by path
 }
 
 // NewMockEnvironment creates a mock environment for testing.
 func NewMockEnvironment(envVars map[string]string) *MockEnvironment {
 	return &MockEnvironment{
-		EnvVars: envVars,
-		Home:    "/home/test",
-		Config:  "/home/test/.config",
-		Data:    "/home/test/.local/share",
-		Cache:   "/home/test/.cache",
-		OS:      "linux",
+		EnvVars:      envVars,
+		Home:         "/home/test",
+		Config:       "/home/test/.config",
+		Data:         "/home/test/.local/share",
+		Cache:        "/home/test/.cache",
+		OS:           "linux",
+		WrittenFiles: make(map[string][]byte),
+		CreatedDirs:  make(map[string]bool),
+		RemovedPaths: make(map[string]bool),
 	}
 }
 
@@ -292,6 +337,70 @@ func (e *MockEnvironment) ReadFile(path string) ([]byte, error) {
 		if data, ok := e.Files[path]; ok {
 			return data, nil
 		}
+	}
+	return nil, os.ErrNotExist
+}
+
+func (e *MockEnvironment) WriteFile(path string, data []byte, perm os.FileMode) error {
+	if e.WriteErrors != nil {
+		if err, ok := e.WriteErrors[path]; ok {
+			return err
+		}
+	}
+	if e.WrittenFiles == nil {
+		e.WrittenFiles = make(map[string][]byte)
+	}
+	e.WrittenFiles[path] = append([]byte{}, data...) // copy
+	// Also make it readable
+	if e.Files == nil {
+		e.Files = make(map[string][]byte)
+	}
+	e.Files[path] = e.WrittenFiles[path]
+	return nil
+}
+
+func (e *MockEnvironment) ReadDir(path string) ([]os.DirEntry, error) {
+	if e.DirEntries != nil {
+		if entries, ok := e.DirEntries[path]; ok {
+			return entries, nil
+		}
+	}
+	return nil, os.ErrNotExist
+}
+
+func (e *MockEnvironment) MkdirAll(path string, perm os.FileMode) error {
+	if e.CreatedDirs == nil {
+		e.CreatedDirs = make(map[string]bool)
+	}
+	e.CreatedDirs[path] = true
+	if e.ExistingDirs == nil {
+		e.ExistingDirs = make(map[string]bool)
+	}
+	e.ExistingDirs[path] = true
+	return nil
+}
+
+func (e *MockEnvironment) Remove(path string) error {
+	if e.RemoveErrors != nil {
+		if err, ok := e.RemoveErrors[path]; ok {
+			return err
+		}
+	}
+	if e.RemovedPaths == nil {
+		e.RemovedPaths = make(map[string]bool)
+	}
+	e.RemovedPaths[path] = true
+	return nil
+}
+
+func (e *MockEnvironment) Stat(path string) (os.FileInfo, error) {
+	if e.StatErrors != nil {
+		if err, ok := e.StatErrors[path]; ok {
+			return nil, err
+		}
+	}
+	if e.FileExists(path) {
+		return nil, nil // exists but no detailed info
 	}
 	return nil, os.ErrNotExist
 }

@@ -34,7 +34,7 @@ func TestBuildEventPhaseMap(t *testing.T) {
 	}
 	reg.Register(agent)
 
-	result := reg.buildEventPhaseMap()
+	result := reg.BuildEventPhaseMap()
 
 	// all three aliases should resolve
 	for _, alias := range []string{"claude-code", "claudecode", "claude"} {
@@ -58,10 +58,10 @@ func TestResolveAgentENV(t *testing.T) {
 	}
 	reg.Register(agent)
 
-	assert.Equal(t, AgentTypeClaudeCode, reg.resolveAgentENV("claude-code"))
-	assert.Equal(t, AgentTypeClaudeCode, reg.resolveAgentENV("claudecode"))
-	assert.Equal(t, AgentTypeClaudeCode, reg.resolveAgentENV("claude"))
-	assert.Equal(t, AgentTypeUnknown, reg.resolveAgentENV("nonexistent"))
+	assert.Equal(t, AgentTypeClaudeCode, reg.ResolveAgentENV("claude-code"))
+	assert.Equal(t, AgentTypeClaudeCode, reg.ResolveAgentENV("claudecode"))
+	assert.Equal(t, AgentTypeClaudeCode, reg.ResolveAgentENV("claude"))
+	assert.Equal(t, AgentTypeUnknown, reg.ResolveAgentENV("nonexistent"))
 }
 
 func TestHookSupportMatrix(t *testing.T) {
@@ -89,7 +89,7 @@ func TestHookSupportMatrix(t *testing.T) {
 		role:      RoleAgent,
 	})
 
-	matrix := reg.hookSupportMatrix()
+	matrix := reg.HookSupportMatrix()
 
 	// only the lifecycle agent should appear
 	assert.Len(t, matrix, 1)
@@ -125,7 +125,7 @@ func TestHookSupportMatrix_MultipleEventsPerPhase(t *testing.T) {
 		aliases: []string{"windsurf"},
 	})
 
-	matrix := reg.hookSupportMatrix()
+	matrix := reg.HookSupportMatrix()
 	assert.Len(t, matrix, 1)
 
 	entry := matrix[0]
@@ -144,6 +144,6 @@ func TestBuildEventPhaseMap_NoLifecycleAgents(t *testing.T) {
 		role:      RoleAgent,
 	})
 
-	result := reg.buildEventPhaseMap()
+	result := reg.BuildEventPhaseMap()
 	assert.Empty(t, result)
 }
