@@ -15,6 +15,14 @@ bd close <id>         # Complete work
 bd sync               # Sync with git
 ```
 
+## Releases
+
+- Every version bump MUST have a tagged GitHub release with human-readable notes
+- Format: `gh release create v0.X.Y --title "v0.X.Y" --notes "..."`
+- Group changes by: Added, Changed, Fixed
+- No commit hashes in release notes
+- Tag on main only after all tests pass
+
 ## Code Quality
 
 - **Test coverage target: 85%+ per package.** Run `go test ./... -coverprofile=coverage.out` and verify every package meets the threshold. No test theater — tests must catch real bugs, edge cases, and failure modes.
