@@ -21,4 +21,5 @@ func init() {
 	r.Register(NewGooseAgent())
 	r.Register(NewAmpAgent())
 	r.Register(NewPiAgent())
+	r.Register(NewCodexAgent())
 }
