@@ -93,11 +93,11 @@ func (a *PiAgent) SupportsXDGConfig() bool {
 // Capabilities returns Pi's supported features.
 func (a *PiAgent) Capabilities() agentx.Capabilities {
 	return agentx.Capabilities{
-		Hooks:          false, // extension-based, not shell hooks
+		Hooks:          true,  // via TypeScript extension bridge
 		MCPServers:     true,  // Pi supports MCP via extensions
 		SystemPrompt:   true,  // SYSTEM.md, CLAUDE.md
 		ProjectContext: true,  // AGENTS.md, .pi/
-		CustomCommands: false, // Pi uses skills/extensions, not slash commands
+		CustomCommands: true,  // via TypeScript extension bridge
 		MinVersion:     "",
 	}
 }
@@ -142,7 +142,31 @@ func (a *PiAgent) IsInstalled(ctx context.Context, env agentx.Environment) (bool
 	return false, nil
 }
 
-func (a *PiAgent) SupportsSession() bool                 { return false }
-func (a *PiAgent) SessionID(_ agentx.Environment) string { return "" }
+func (a *PiAgent) SupportsSession() bool { return true }
+func (a *PiAgent) SessionID(env agentx.Environment) string {
+	return env.GetEnv("PI_SESSION_ID")
+}
+
+
+// EventPhases returns Pi's extension event-to-phase mapping.
+// These events are delivered via Pi's TypeScript extension system, not native
+// shell hooks. The SageOx Pi extension calls `ox agent hook <event>` from
+// each extension event handler, bridging Pi's extension lifecycle to ox's
+// canonical phases.
+func (a *PiAgent) EventPhases() agentx.EventPhaseMap {
+	return agentx.EventPhaseMap{
+		agentx.PiEventSessionStart:    agentx.PhaseStart,
+		agentx.PiEventSessionShutdown: agentx.PhaseEnd,
+		agentx.PiEventTurnStart:       agentx.PhasePrompt,
+		agentx.PiEventToolResult:      agentx.PhaseAfterTool,
+		agentx.PiEventBeforeCompact:   agentx.PhaseCompact,
+	}
+}
+
+// AgentENVAliases returns the AGENT_ENV values that identify Pi.
+func (a *PiAgent) AgentENVAliases() []string {
+	return []string{"pi", "pi-coding-agent"}
+}
 
 var _ agentx.Agent = (*PiAgent)(nil)
+var _ agentx.LifecycleEventMapper = (*PiAgent)(nil)

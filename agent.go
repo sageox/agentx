@@ -483,6 +483,21 @@ const (
 	AmpEventToolPostExecute HookEvent = "tool:post-execute"
 )
 
+// Pi-specific extension events.
+// Pi has no native hook system — these events are exposed via the TypeScript
+// extension API (ExtensionAPI.on()). A SageOx extension bridges these to
+// ox's canonical lifecycle phases by calling `ox agent hook <event>`.
+// Reference: https://github.com/badlogic/pi-mono/tree/main/packages/agent-core
+const (
+	PiEventSessionStart     HookEvent = "session_start"
+	PiEventSessionShutdown  HookEvent = "session_shutdown"
+	PiEventTurnStart        HookEvent = "turn_start"
+	PiEventTurnEnd          HookEvent = "turn_end"
+	PiEventToolResult       HookEvent = "tool_result"
+	PiEventBeforeCompact    HookEvent = "session_before_compact"
+	PiEventBeforeAgentStart HookEvent = "before_agent_start"
+)
+
 // OpenCode-specific hook events (plugin system).
 // Reference: https://opencode.ai/docs/plugins/
 const (
