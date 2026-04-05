@@ -22,4 +22,5 @@ func init() {
 	r.Register(NewAmpAgent())
 	r.Register(NewPiAgent())
 	r.Register(NewCodexAgent())
+	r.Register(NewGeminiAgent())
 }
