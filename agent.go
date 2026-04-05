@@ -5,7 +5,8 @@
 // coding ecosystem.
 //
 // Supported agents: Claude Code, Cursor, Windsurf, GitHub Copilot, Aider,
-// Cody, Continue, Code Puppy, Kiro, OpenCode, Goose, and Amp.
+// Cody, Continue, Code Puppy, Kiro, OpenCode, Goose, Amp, Codex, Gemini CLI,
+// Pi, and Droid.
 //
 // Detection uses the AGENT_ENV environment variable as the standard
 // mechanism for explicit agent identification. Native environment
@@ -42,6 +43,10 @@ const (
 	AgentTypeOpenCode  AgentType = "opencode"
 	AgentTypeGoose     AgentType = "goose"
 	AgentTypeAmp       AgentType = "amp"
+	AgentTypeCodex     AgentType = "codex"
+	AgentTypeGemini    AgentType = "gemini"
+	AgentTypePi        AgentType = "pi"
+	AgentTypeDroid     AgentType = "droid"
 )
 
 // SupportedAgents is the canonical list of coding agents that agentx supports.
@@ -58,6 +63,10 @@ var SupportedAgents = []AgentType{
 	AgentTypeOpenCode,
 	AgentTypeGoose,
 	AgentTypeAmp,
+	AgentTypeCodex,
+	AgentTypeGemini,
+	AgentTypePi,
+	AgentTypeDroid,
 }
 
 // Agent represents a coding agent with detection and configuration capabilities.
