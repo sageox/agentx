@@ -16,4 +16,8 @@ func init() {
 	r.Register(NewOpenCodeAgent())
 	r.Register(NewGooseAgent())
 	r.Register(NewAmpAgent())
+	r.Register(NewCodexAgent())
+	r.Register(NewGeminiAgent())
+	r.Register(NewPiAgent())
+	r.Register(NewDroidAgent())
 }
