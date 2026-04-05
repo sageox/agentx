@@ -419,6 +419,29 @@ func allAgentSpecs() []agentSpec {
 			eventPhaseCount:  7,
 		},
 		{
+			name:            "Gemini CLI",
+			constructor:     func() agentx.Agent { return NewGeminiAgent() },
+			agentType:       agentx.AgentTypeGemini,
+			displayName:     "Gemini CLI",
+			url:             "https://github.com/google-gemini/gemini-cli",
+			supportsXDG:     false,
+			projectConfig:   ".gemini",
+			contextFiles:    []string{"GEMINI.md", "AGENTS.md"},
+			capabilities:    agentx.Capabilities{Hooks: false, MCPServers: true, SystemPrompt: true, ProjectContext: true, CustomCommands: false},
+			binaryName:      "gemini",
+			supportsSession: false,
+			usesHomeConfig:  true,
+			configSubdir:    ".gemini",
+			versionCmd:      "gemini",
+			detectEnvVars: []detectCase{
+				{"GEMINI=1", map[string]string{"GEMINI": "1"}, true},
+				{"GEMINI_AGENT=1", map[string]string{"GEMINI_AGENT": "1"}, true},
+				{"AGENT_ENV=gemini", map[string]string{"AGENT_ENV": "gemini"}, true},
+				{"exec path heuristic", map[string]string{"_": "/usr/local/bin/gemini"}, true},
+				{"no env vars", map[string]string{}, false},
+			},
+		},
+		{
 			name:            "Codex",
 			constructor:     func() agentx.Agent { return NewCodexAgent() },
 			agentType:       agentx.AgentTypeCodex,
@@ -817,6 +840,7 @@ func TestAllAgents_SetHookAndCommandManager(t *testing.T) {
 		{"Cline", NewClineAgent()},
 		{"Droid", NewDroidAgent()},
 		{"Codex", NewCodexAgent()},
+		{"Gemini CLI", NewGeminiAgent()},
 	}
 
 	for _, tt := range agents {
@@ -909,6 +933,7 @@ func TestNonLifecycleAgents_DoNotImplementMapper(t *testing.T) {
 		{"Goose", NewGooseAgent()},
 		{"Pi", NewPiAgent()},
 		{"Codex", NewCodexAgent()},
+		{"Gemini CLI", NewGeminiAgent()},
 	}
 
 	for _, tt := range nonLifecycleAgents {

@@ -74,6 +74,9 @@ func RegisterDefaultAgents() {
 	// Pi (shittycodingagent.ai)
 	agentx.DefaultRegistry.Register(agents.NewPiAgent())
 
+	// Gemini CLI
+	agentx.DefaultRegistry.Register(agents.NewGeminiAgent())
+
 	// Orchestrators
 	agentx.DefaultRegistry.Register(orchestrators.NewOpenClawAgent())
 	agentx.DefaultRegistry.Register(orchestrators.NewConductorAgent())
