@@ -32,13 +32,19 @@ func RegisterDefaultAgents() {
 	agentx.DefaultRegistry.Register(claudeCode)
 
 	// Cursor
-	agentx.DefaultRegistry.Register(agents.NewCursorAgent())
+	cursor := agents.NewCursorAgent()
+	cursor.SetRulesManager(rules.NewCursorRulesManager())
+	agentx.DefaultRegistry.Register(cursor)
 
 	// Windsurf
-	agentx.DefaultRegistry.Register(agents.NewWindsurfAgent())
+	windsurf := agents.NewWindsurfAgent()
+	windsurf.SetRulesManager(rules.NewWindsurfRulesManager())
+	agentx.DefaultRegistry.Register(windsurf)
 
 	// Copilot
-	agentx.DefaultRegistry.Register(agents.NewCopilotAgent())
+	copilot := agents.NewCopilotAgent()
+	copilot.SetRulesManager(rules.NewCopilotRulesManager())
+	agentx.DefaultRegistry.Register(copilot)
 
 	// Aider
 	agentx.DefaultRegistry.Register(agents.NewAiderAgent())
@@ -53,7 +59,9 @@ func RegisterDefaultAgents() {
 	agentx.DefaultRegistry.Register(agents.NewCodePuppyAgent())
 
 	// Kiro
-	agentx.DefaultRegistry.Register(agents.NewKiroAgent())
+	kiro := agents.NewKiroAgent()
+	kiro.SetRulesManager(rules.NewKiroRulesManager())
+	agentx.DefaultRegistry.Register(kiro)
 
 	// OpenCode
 	agentx.DefaultRegistry.Register(agents.NewOpenCodeAgent())
@@ -68,10 +76,14 @@ func RegisterDefaultAgents() {
 	agentx.DefaultRegistry.Register(agents.NewAmpAgent())
 
 	// Cline
-	agentx.DefaultRegistry.Register(agents.NewClineAgent())
+	cline := agents.NewClineAgent()
+	cline.SetRulesManager(rules.NewClineRulesManager())
+	agentx.DefaultRegistry.Register(cline)
 
 	// Droid (Factory.ai)
-	agentx.DefaultRegistry.Register(agents.NewDroidAgent())
+	droid := agents.NewDroidAgent()
+	droid.SetRulesManager(rules.NewDroidRulesManager())
+	agentx.DefaultRegistry.Register(droid)
 
 	// Pi (shittycodingagent.ai)
 	agentx.DefaultRegistry.Register(agents.NewPiAgent())

@@ -14,6 +14,7 @@ import (
 type ClineAgent struct {
 	hookManager    agentx.HookManager
 	commandManager agentx.CommandManager
+	rulesManager   agentx.RulesManager
 }
 
 // NewClineAgent creates a new Cline agent.
@@ -105,11 +106,12 @@ func (a *ClineAgent) SupportsXDGConfig() bool {
 // Capabilities returns Cline's supported features.
 func (a *ClineAgent) Capabilities() agentx.Capabilities {
 	return agentx.Capabilities{
-		Hooks:          true,  // Cline supports hooks (v3.36+)
-		MCPServers:     true,  // Cline supports MCP servers
-		SystemPrompt:   true,  // Custom instructions
-		ProjectContext: true,  // .clinerules at project level
-		CustomCommands: false, // No custom commands
+		Hooks:          true, // Cline supports hooks (v3.36+)
+		MCPServers:     true, // Cline supports MCP servers
+		SystemPrompt:   true, // Custom instructions
+		ProjectContext: true, // .clinerules at project level
+		CustomCommands: false,
+		Rules:          true, // No custom commands
 		MinVersion:     "",
 	}
 }
@@ -128,9 +130,14 @@ func (a *ClineAgent) CommandManager() agentx.CommandManager {
 	return a.commandManager
 }
 
-// RulesManager returns the rules manager (nil if not supported).
+// RulesManager returns the rules manager for Cline.
 func (a *ClineAgent) RulesManager() agentx.RulesManager {
-	return nil
+	return a.rulesManager
+}
+
+// SetRulesManager sets the rules manager (used during registration).
+func (a *ClineAgent) SetRulesManager(rm agentx.RulesManager) {
+	a.rulesManager = rm
 }
 
 func (a *ClineAgent) SetCommandManager(cm agentx.CommandManager) {

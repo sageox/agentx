@@ -11,6 +11,7 @@ import (
 type KiroAgent struct {
 	hookManager    agentx.HookManager
 	commandManager agentx.CommandManager
+	rulesManager   agentx.RulesManager
 }
 
 // NewKiroAgent creates a new Kiro agent.
@@ -80,11 +81,12 @@ func (a *KiroAgent) SupportsXDGConfig() bool {
 // Capabilities returns Kiro's supported features.
 func (a *KiroAgent) Capabilities() agentx.Capabilities {
 	return agentx.Capabilities{
-		Hooks:          true,  // supports hooks/rules
-		MCPServers:     true,  // MCP support
-		SystemPrompt:   true,  // custom instructions
-		ProjectContext: true,  // reads project context
-		CustomCommands: false, // TBD
+		Hooks:          true, // supports hooks/rules
+		MCPServers:     true, // MCP support
+		SystemPrompt:   true, // custom instructions
+		ProjectContext: true, // reads project context
+		CustomCommands: false,
+		Rules:          true, // TBD
 		MinVersion:     "",
 	}
 }
@@ -101,9 +103,14 @@ func (a *KiroAgent) CommandManager() agentx.CommandManager {
 	return a.commandManager
 }
 
-// RulesManager returns the rules manager (nil if not supported).
+// RulesManager returns the rules manager for Kiro.
 func (a *KiroAgent) RulesManager() agentx.RulesManager {
-	return nil
+	return a.rulesManager
+}
+
+// SetRulesManager sets the rules manager (used during registration).
+func (a *KiroAgent) SetRulesManager(rm agentx.RulesManager) {
+	a.rulesManager = rm
 }
 
 func (a *KiroAgent) SetCommandManager(cm agentx.CommandManager) {

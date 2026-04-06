@@ -199,5 +199,5 @@ func TestClaudeCodeRulesManager_DowngradeGuard(t *testing.T) {
 	assert.Contains(t, string(data), "new content")
 }
 
-// Ensure ClaudeCodeRulesManager implements RulesManager at compile time.
-var _ agentx.RulesManager = (*ClaudeCodeRulesManager)(nil)
+// Ensure BaseRulesManager implements RulesManager at compile time.
+var _ agentx.RulesManager = (*BaseRulesManager)(nil)

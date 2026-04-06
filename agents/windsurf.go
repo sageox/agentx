@@ -11,6 +11,7 @@ import (
 type WindsurfAgent struct {
 	hookManager    agentx.HookManager
 	commandManager agentx.CommandManager
+	rulesManager   agentx.RulesManager
 }
 
 // NewWindsurfAgent creates a new Windsurf agent.
@@ -91,8 +92,9 @@ func (a *WindsurfAgent) Capabilities() agentx.Capabilities {
 		MCPServers:     false, // TBD - needs verification
 		SystemPrompt:   true,  // cascade memories
 		ProjectContext: true,  // reads project context
-		CustomCommands: false, // TBD
-		MinVersion:     "",    // TBD
+		CustomCommands: false,
+		Rules:          true, // TBD
+		MinVersion:     "",   // TBD
 	}
 }
 
@@ -110,9 +112,14 @@ func (a *WindsurfAgent) CommandManager() agentx.CommandManager {
 	return a.commandManager
 }
 
-// RulesManager returns the rules manager (nil if not supported).
+// RulesManager returns the rules manager for Windsurf.
 func (a *WindsurfAgent) RulesManager() agentx.RulesManager {
-	return nil
+	return a.rulesManager
+}
+
+// SetRulesManager sets the rules manager (used during registration).
+func (a *WindsurfAgent) SetRulesManager(rm agentx.RulesManager) {
+	a.rulesManager = rm
 }
 
 func (a *WindsurfAgent) SetCommandManager(cm agentx.CommandManager) {

@@ -11,6 +11,7 @@ import (
 type CopilotAgent struct {
 	hookManager    agentx.HookManager
 	commandManager agentx.CommandManager
+	rulesManager   agentx.RulesManager
 }
 
 // NewCopilotAgent creates a new GitHub Copilot agent.
@@ -90,8 +91,9 @@ func (a *CopilotAgent) Capabilities() agentx.Capabilities {
 		MCPServers:     false, // runs in GitHub backend
 		SystemPrompt:   true,  // .github/copilot-instructions.md
 		ProjectContext: true,  // reads project context
-		CustomCommands: false, // no custom commands
-		MinVersion:     "",    // TBD
+		CustomCommands: false,
+		Rules:          true, // no custom commands
+		MinVersion:     "",   // TBD
 	}
 }
 
@@ -110,9 +112,14 @@ func (a *CopilotAgent) CommandManager() agentx.CommandManager {
 	return a.commandManager
 }
 
-// RulesManager returns the rules manager (nil if not supported).
+// RulesManager returns the rules manager for Copilot.
 func (a *CopilotAgent) RulesManager() agentx.RulesManager {
-	return nil
+	return a.rulesManager
+}
+
+// SetRulesManager sets the rules manager (used during registration).
+func (a *CopilotAgent) SetRulesManager(rm agentx.RulesManager) {
+	a.rulesManager = rm
 }
 
 func (a *CopilotAgent) SetCommandManager(cm agentx.CommandManager) {

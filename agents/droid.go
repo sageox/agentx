@@ -14,6 +14,7 @@ import (
 type DroidAgent struct {
 	hookManager    agentx.HookManager
 	commandManager agentx.CommandManager
+	rulesManager   agentx.RulesManager
 }
 
 // NewDroidAgent creates a new Droid agent.
@@ -117,7 +118,8 @@ func (a *DroidAgent) Capabilities() agentx.Capabilities {
 		MCPServers:     true, // Droid supports MCP servers
 		SystemPrompt:   true, // Custom instructions via DROID.md
 		ProjectContext: true, // Project-level context files
-		CustomCommands: true, // Slash commands
+		CustomCommands: true,
+		Rules:          true, // Slash commands
 		MinVersion:     "",
 	}
 }
@@ -136,9 +138,14 @@ func (a *DroidAgent) CommandManager() agentx.CommandManager {
 	return a.commandManager
 }
 
-// RulesManager returns the rules manager (nil if not supported).
+// RulesManager returns the rules manager for Droid.
 func (a *DroidAgent) RulesManager() agentx.RulesManager {
-	return nil
+	return a.rulesManager
+}
+
+// SetRulesManager sets the rules manager (used during registration).
+func (a *DroidAgent) SetRulesManager(rm agentx.RulesManager) {
+	a.rulesManager = rm
 }
 
 func (a *DroidAgent) SetCommandManager(cm agentx.CommandManager) {

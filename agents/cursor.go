@@ -12,6 +12,7 @@ import (
 type CursorAgent struct {
 	hookManager    agentx.HookManager
 	commandManager agentx.CommandManager
+	rulesManager   agentx.RulesManager
 }
 
 // NewCursorAgent creates a new Cursor agent.
@@ -87,12 +88,13 @@ func (a *CursorAgent) SupportsXDGConfig() bool {
 // Capabilities returns Cursor's supported features.
 func (a *CursorAgent) Capabilities() agentx.Capabilities {
 	return agentx.Capabilities{
-		Hooks:          true,  // .cursor/rules/
-		MCPServers:     true,  // cursor supports MCP
-		SystemPrompt:   true,  // .cursorrules
-		ProjectContext: true,  // .cursorrules at project level
-		CustomCommands: false, // no custom commands yet
-		MinVersion:     "",    // TBD
+		Hooks:          true, // .cursor/rules/
+		MCPServers:     true, // cursor supports MCP
+		SystemPrompt:   true, // .cursorrules
+		ProjectContext: true, // .cursorrules at project level
+		CustomCommands: false,
+		Rules:          true, // no custom commands yet
+		MinVersion:     "",   // TBD
 	}
 }
 
@@ -110,9 +112,14 @@ func (a *CursorAgent) CommandManager() agentx.CommandManager {
 	return a.commandManager
 }
 
-// RulesManager returns the rules manager (nil if not supported).
+// RulesManager returns the rules manager for Cursor.
 func (a *CursorAgent) RulesManager() agentx.RulesManager {
-	return nil
+	return a.rulesManager
+}
+
+// SetRulesManager sets the rules manager (used during registration).
+func (a *CursorAgent) SetRulesManager(rm agentx.RulesManager) {
+	a.rulesManager = rm
 }
 
 func (a *CursorAgent) SetCommandManager(cm agentx.CommandManager) {
