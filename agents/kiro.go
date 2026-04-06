@@ -101,6 +101,11 @@ func (a *KiroAgent) CommandManager() agentx.CommandManager {
 	return a.commandManager
 }
 
+// RulesManager returns the rules manager (nil if not supported).
+func (a *KiroAgent) RulesManager() agentx.RulesManager {
+	return nil
+}
+
 func (a *KiroAgent) SetCommandManager(cm agentx.CommandManager) {
 	a.commandManager = cm
 }

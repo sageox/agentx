@@ -100,6 +100,11 @@ func (a *ContinueAgent) CommandManager() agentx.CommandManager {
 	return a.commandManager
 }
 
+// RulesManager returns the rules manager (nil if not supported).
+func (a *ContinueAgent) RulesManager() agentx.RulesManager {
+	return nil
+}
+
 func (a *ContinueAgent) SetCommandManager(cm agentx.CommandManager) {
 	a.commandManager = cm
 }

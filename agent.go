@@ -225,6 +225,9 @@ type AgentExtensions interface {
 
 	// CommandManager returns the command manager for this agent, or nil if custom commands not supported
 	CommandManager() CommandManager
+
+	// RulesManager returns the rules manager for this agent, or nil if rules not supported
+	RulesManager() RulesManager
 }
 
 // LifecycleEventMapper is implemented by agents that support lifecycle hooks.
@@ -294,6 +297,10 @@ type Capabilities struct {
 
 	// CustomCommands indicates the agent supports custom slash commands
 	CustomCommands bool
+
+	// Rules indicates the agent supports modular rules directories
+	// (e.g., .claude/rules/ for Claude Code, .cursor/rules/ for Cursor)
+	Rules bool
 
 	// MinVersion is the minimum agent version required for full feature support (future)
 	MinVersion string
@@ -596,6 +603,56 @@ type CommandManager interface {
 	CommandDir(projectRoot string) string
 }
 
+// RuleFile represents a rule to install in the agent's rules directory.
+// Rule files are modular instructions loaded by coding agents alongside
+// their main context files (e.g., CLAUDE.md). They support optional
+// glob-based path scoping so rules only activate for matching files.
+type RuleFile struct {
+	// Name is the filename (e.g., "ox.md", "ox-team-go.md")
+	Name string
+
+	// Content is the file content (without stamp; stamp is added on write)
+	Content []byte
+
+	// Version is the version that ships this rule.
+	// Used as a downgrade guard: an older binary won't overwrite rules
+	// installed by a newer binary.
+	Version string
+
+	// Globs is an optional comma-separated glob pattern for path-scoped rules.
+	// When non-empty, the rule only activates when the agent opens matching files.
+	// Example: "**/*.go,**/*.mod" for Go-specific rules.
+	// When empty, the rule loads at session start (always active).
+	Globs string
+
+	// Description is an optional one-line description of the rule's purpose.
+	// Used in YAML frontmatter for agents that support it.
+	Description string
+}
+
+// RulesManager handles rule file installation for agents that support
+// modular rules directories (e.g., .claude/rules/, .cursor/rules/).
+// The interface mirrors CommandManager for consistency.
+type RulesManager interface {
+	// Install writes rule files to the agent's rules directory.
+	// When overwrite is false, existing files are skipped entirely (safe for init).
+	// When overwrite is true, existing files are replaced only if content differs
+	// and the installed version is not newer (downgrade guard).
+	// Returns the list of filenames that were written.
+	Install(ctx context.Context, projectRoot string, rules []RuleFile, overwrite bool) ([]string, error)
+
+	// Uninstall removes rule files matching the prefix from the rules directory.
+	// Returns the list of filenames that were removed.
+	Uninstall(ctx context.Context, projectRoot string, prefix string) ([]string, error)
+
+	// Validate checks which expected rule files are missing or stale.
+	// Returns missing filenames and stale filenames (content differs from expected).
+	Validate(ctx context.Context, projectRoot string, rules []RuleFile) (missing []string, stale []string, err error)
+
+	// RulesDir returns the path to the rules directory for a project.
+	RulesDir(projectRoot string) string
+}
+
 // ReadCommandFiles reads .md files from an fs.FS directory into CommandFile slices.
 // Useful for converting go:embed filesystems into CommandFile arrays for installation.
 func ReadCommandFiles(fsys fs.FS, dir string) ([]CommandFile, error) {
@@ -752,6 +809,22 @@ func IsCommandStale(existing []byte, cmd CommandFile, prefix string) bool {
 		return false
 	}
 	return true
+}
+
+// ShouldWriteRule determines whether a rule file should be written.
+// Reuses the same logic as ShouldWriteCommand (stamp + version guard).
+func ShouldWriteRule(existing []byte, rule RuleFile, overwrite bool, prefix string) bool {
+	return ShouldWriteCommand(existing, CommandFile{
+		Name: rule.Name, Content: rule.Content, Version: rule.Version,
+	}, overwrite, prefix)
+}
+
+// IsRuleStale determines whether an installed rule file is outdated.
+// Reuses the same logic as IsCommandStale (stamp + version guard).
+func IsRuleStale(existing []byte, rule RuleFile, prefix string) bool {
+	return IsCommandStale(existing, CommandFile{
+		Name: rule.Name, Content: rule.Content, Version: rule.Version,
+	}, prefix)
 }
 
 // firstLine returns the first line of content (without newline).

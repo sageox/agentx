@@ -12,6 +12,7 @@ import (
 	"github.com/sageox/agentx/commands"
 	"github.com/sageox/agentx/hooks"
 	"github.com/sageox/agentx/orchestrators"
+	"github.com/sageox/agentx/rules"
 )
 
 func init() {
@@ -27,6 +28,7 @@ func RegisterDefaultAgents() {
 	claudeCode := agents.NewClaudeCodeAgent()
 	claudeCode.SetHookManager(hooks.NewClaudeCodeHookManager(env))
 	claudeCode.SetCommandManager(commands.NewClaudeCodeCommandManager())
+	claudeCode.SetRulesManager(rules.NewClaudeCodeRulesManager())
 	agentx.DefaultRegistry.Register(claudeCode)
 
 	// Cursor

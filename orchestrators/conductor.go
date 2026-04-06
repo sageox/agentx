@@ -46,8 +46,9 @@ func (a *ConductorAgent) SupportsXDGConfig() bool   { return false }
 func (a *ConductorAgent) Capabilities() agentx.Capabilities {
 	return agentx.Capabilities{}
 }
-func (a *ConductorAgent) HookManager() agentx.HookManager     { return nil }
+func (a *ConductorAgent) HookManager() agentx.HookManager       { return nil }
 func (a *ConductorAgent) CommandManager() agentx.CommandManager { return nil }
+func (a *ConductorAgent) RulesManager() agentx.RulesManager     { return nil }
 func (a *ConductorAgent) DetectVersion(_ context.Context, _ agentx.Environment) string {
 	return ""
 }

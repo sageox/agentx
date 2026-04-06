@@ -85,10 +85,10 @@ func (a *AmpAgent) SupportsXDGConfig() bool {
 func (a *AmpAgent) Capabilities() agentx.Capabilities {
 	return agentx.Capabilities{
 		Hooks:          true, // amp.hooks in .vscode/settings.json
-		MCPServers:     true,  // supports MCP
-		SystemPrompt:   true,  // custom instructions
-		ProjectContext: true,  // AGENTS.md
-		CustomCommands: true,  // toolboxes and skills
+		MCPServers:     true, // supports MCP
+		SystemPrompt:   true, // custom instructions
+		ProjectContext: true, // AGENTS.md
+		CustomCommands: true, // toolboxes and skills
 		MinVersion:     "",
 	}
 }
@@ -103,6 +103,11 @@ func (a *AmpAgent) SetHookManager(hm agentx.HookManager) {
 
 func (a *AmpAgent) CommandManager() agentx.CommandManager {
 	return a.commandManager
+}
+
+// RulesManager returns the rules manager (nil if not supported).
+func (a *AmpAgent) RulesManager() agentx.RulesManager {
+	return nil
 }
 
 func (a *AmpAgent) SetCommandManager(cm agentx.CommandManager) {

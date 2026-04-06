@@ -297,6 +297,7 @@ func (a *mockAgent) SupportsXDGConfig() bool                                    
 func (a *mockAgent) Capabilities() Capabilities                                     { return a.capabilities }
 func (a *mockAgent) HookManager() HookManager                                       { return nil }
 func (a *mockAgent) CommandManager() CommandManager                                 { return nil }
+func (a *mockAgent) RulesManager() RulesManager                                     { return nil }
 func (a *mockAgent) IsInstalled(ctx context.Context, env Environment) (bool, error) { return true, nil }
 func (a *mockAgent) DetectVersion(_ context.Context, _ Environment) string          { return "" }
 func (a *mockAgent) SupportsSession() bool                                          { return false }

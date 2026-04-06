@@ -86,7 +86,7 @@ func (a *CopilotAgent) SupportsXDGConfig() bool {
 // Note: Copilot's agent mode has different capabilities than the autocomplete.
 func (a *CopilotAgent) Capabilities() agentx.Capabilities {
 	return agentx.Capabilities{
-		Hooks:          true, // .github/hooks/ JSON files
+		Hooks:          true,  // .github/hooks/ JSON files
 		MCPServers:     false, // runs in GitHub backend
 		SystemPrompt:   true,  // .github/copilot-instructions.md
 		ProjectContext: true,  // reads project context
@@ -108,6 +108,11 @@ func (a *CopilotAgent) SetHookManager(hm agentx.HookManager) {
 
 func (a *CopilotAgent) CommandManager() agentx.CommandManager {
 	return a.commandManager
+}
+
+// RulesManager returns the rules manager (nil if not supported).
+func (a *CopilotAgent) RulesManager() agentx.RulesManager {
+	return nil
 }
 
 func (a *CopilotAgent) SetCommandManager(cm agentx.CommandManager) {

@@ -107,6 +107,11 @@ func (a *AiderAgent) CommandManager() agentx.CommandManager {
 	return a.commandManager
 }
 
+// RulesManager returns the rules manager (nil if not supported).
+func (a *AiderAgent) RulesManager() agentx.RulesManager {
+	return nil
+}
+
 func (a *AiderAgent) SetCommandManager(cm agentx.CommandManager) {
 	a.commandManager = cm
 }

@@ -37,11 +37,12 @@ func (a *mockDetectableAgent) Detect(ctx context.Context, env Environment) (bool
 }
 func (a *mockDetectableAgent) UserConfigPath(_ Environment) (string, error) { return "", nil }
 func (a *mockDetectableAgent) ProjectConfigPath() string                    { return "" }
-func (a *mockDetectableAgent) ContextFiles() []string                      { return nil }
-func (a *mockDetectableAgent) SupportsXDGConfig() bool                     { return false }
-func (a *mockDetectableAgent) Capabilities() Capabilities                  { return a.capabilities }
-func (a *mockDetectableAgent) HookManager() HookManager                    { return nil }
+func (a *mockDetectableAgent) ContextFiles() []string                       { return nil }
+func (a *mockDetectableAgent) SupportsXDGConfig() bool                      { return false }
+func (a *mockDetectableAgent) Capabilities() Capabilities                   { return a.capabilities }
+func (a *mockDetectableAgent) HookManager() HookManager                     { return nil }
 func (a *mockDetectableAgent) CommandManager() CommandManager               { return nil }
+func (a *mockDetectableAgent) RulesManager() RulesManager                   { return nil }
 func (a *mockDetectableAgent) IsInstalled(_ context.Context, _ Environment) (bool, error) {
 	return false, nil
 }

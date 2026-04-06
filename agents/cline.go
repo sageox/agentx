@@ -105,7 +105,7 @@ func (a *ClineAgent) SupportsXDGConfig() bool {
 // Capabilities returns Cline's supported features.
 func (a *ClineAgent) Capabilities() agentx.Capabilities {
 	return agentx.Capabilities{
-		Hooks:          true, // Cline supports hooks (v3.36+)
+		Hooks:          true,  // Cline supports hooks (v3.36+)
 		MCPServers:     true,  // Cline supports MCP servers
 		SystemPrompt:   true,  // Custom instructions
 		ProjectContext: true,  // .clinerules at project level
@@ -126,6 +126,11 @@ func (a *ClineAgent) SetHookManager(hm agentx.HookManager) {
 
 func (a *ClineAgent) CommandManager() agentx.CommandManager {
 	return a.commandManager
+}
+
+// RulesManager returns the rules manager (nil if not supported).
+func (a *ClineAgent) RulesManager() agentx.RulesManager {
+	return nil
 }
 
 func (a *ClineAgent) SetCommandManager(cm agentx.CommandManager) {

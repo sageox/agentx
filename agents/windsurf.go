@@ -110,6 +110,11 @@ func (a *WindsurfAgent) CommandManager() agentx.CommandManager {
 	return a.commandManager
 }
 
+// RulesManager returns the rules manager (nil if not supported).
+func (a *WindsurfAgent) RulesManager() agentx.RulesManager {
+	return nil
+}
+
 func (a *WindsurfAgent) SetCommandManager(cm agentx.CommandManager) {
 	a.commandManager = cm
 }
@@ -157,12 +162,12 @@ func (a *WindsurfAgent) IsInstalled(ctx context.Context, env agentx.Environment)
 // Reference: https://docs.windsurf.com/windsurf/cascade/hooks
 func (a *WindsurfAgent) EventPhases() agentx.EventPhaseMap {
 	return agentx.EventPhaseMap{
-		agentx.WindsurfEventPreReadCode:          agentx.PhaseBeforeTool,
-		agentx.WindsurfEventPostWriteCode:        agentx.PhaseAfterTool,
-		agentx.WindsurfEventPreRunCommand:        agentx.PhaseBeforeTool,
-		agentx.WindsurfEventPostRunCommand:       agentx.PhaseAfterTool,
-		agentx.WindsurfEventPreUserPrompt:        agentx.PhasePrompt,
-		agentx.WindsurfEventPostCascadeResponse:  agentx.PhaseStop,
+		agentx.WindsurfEventPreReadCode:         agentx.PhaseBeforeTool,
+		agentx.WindsurfEventPostWriteCode:       agentx.PhaseAfterTool,
+		agentx.WindsurfEventPreRunCommand:       agentx.PhaseBeforeTool,
+		agentx.WindsurfEventPostRunCommand:      agentx.PhaseAfterTool,
+		agentx.WindsurfEventPreUserPrompt:       agentx.PhasePrompt,
+		agentx.WindsurfEventPostCascadeResponse: agentx.PhaseStop,
 	}
 }
 

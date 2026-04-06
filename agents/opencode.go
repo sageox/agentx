@@ -79,7 +79,7 @@ func (a *OpenCodeAgent) SupportsXDGConfig() bool {
 // Capabilities returns OpenCode's supported features.
 func (a *OpenCodeAgent) Capabilities() agentx.Capabilities {
 	return agentx.Capabilities{
-		Hooks:          true, // JS/TS plugin system
+		Hooks:          true,  // JS/TS plugin system
 		MCPServers:     true,  // supports MCP
 		SystemPrompt:   true,  // custom instructions
 		ProjectContext: true,  // AGENTS.md
@@ -98,6 +98,11 @@ func (a *OpenCodeAgent) SetHookManager(hm agentx.HookManager) {
 
 func (a *OpenCodeAgent) CommandManager() agentx.CommandManager {
 	return a.commandManager
+}
+
+// RulesManager returns the rules manager (nil if not supported).
+func (a *OpenCodeAgent) RulesManager() agentx.RulesManager {
+	return nil
 }
 
 func (a *OpenCodeAgent) SetCommandManager(cm agentx.CommandManager) {
@@ -134,8 +139,8 @@ func (a *OpenCodeAgent) IsInstalled(ctx context.Context, env agentx.Environment)
 // Reference: https://opencode.ai/docs/plugins/
 func (a *OpenCodeAgent) EventPhases() agentx.EventPhaseMap {
 	return agentx.EventPhaseMap{
-		agentx.OpenCodeEventSessionCreated:   agentx.PhaseStart,
-		agentx.OpenCodeEventSessionCompacted: agentx.PhaseCompact,
+		agentx.OpenCodeEventSessionCreated:    agentx.PhaseStart,
+		agentx.OpenCodeEventSessionCompacted:  agentx.PhaseCompact,
 		agentx.OpenCodeEventToolExecuteBefore: agentx.PhaseBeforeTool,
 		agentx.OpenCodeEventToolExecuteAfter:  agentx.PhaseAfterTool,
 		agentx.OpenCodeEventSessionIdle:       agentx.PhaseStop,

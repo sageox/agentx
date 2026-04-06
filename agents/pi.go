@@ -93,11 +93,11 @@ func (a *PiAgent) SupportsXDGConfig() bool {
 // Capabilities returns Pi's supported features.
 func (a *PiAgent) Capabilities() agentx.Capabilities {
 	return agentx.Capabilities{
-		Hooks:          true,  // via TypeScript extension bridge
-		MCPServers:     true,  // Pi supports MCP via extensions
-		SystemPrompt:   true,  // SYSTEM.md, CLAUDE.md
-		ProjectContext: true,  // AGENTS.md, .pi/
-		CustomCommands: true,  // via TypeScript extension bridge
+		Hooks:          true, // via TypeScript extension bridge
+		MCPServers:     true, // Pi supports MCP via extensions
+		SystemPrompt:   true, // SYSTEM.md, CLAUDE.md
+		ProjectContext: true, // AGENTS.md, .pi/
+		CustomCommands: true, // via TypeScript extension bridge
 		MinVersion:     "",
 	}
 }
@@ -112,6 +112,11 @@ func (a *PiAgent) SetHookManager(hm agentx.HookManager) {
 
 func (a *PiAgent) CommandManager() agentx.CommandManager {
 	return a.commandManager
+}
+
+// RulesManager returns the rules manager (nil if not supported).
+func (a *PiAgent) RulesManager() agentx.RulesManager {
+	return nil
 }
 
 func (a *PiAgent) SetCommandManager(cm agentx.CommandManager) {
@@ -146,7 +151,6 @@ func (a *PiAgent) SupportsSession() bool { return true }
 func (a *PiAgent) SessionID(env agentx.Environment) string {
 	return env.GetEnv("PI_SESSION_ID")
 }
-
 
 // EventPhases returns Pi's extension event-to-phase mapping.
 // These events are delivered via Pi's TypeScript extension system, not native

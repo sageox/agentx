@@ -136,6 +136,11 @@ func (a *DroidAgent) CommandManager() agentx.CommandManager {
 	return a.commandManager
 }
 
+// RulesManager returns the rules manager (nil if not supported).
+func (a *DroidAgent) RulesManager() agentx.RulesManager {
+	return nil
+}
+
 func (a *DroidAgent) SetCommandManager(cm agentx.CommandManager) {
 	a.commandManager = cm
 }

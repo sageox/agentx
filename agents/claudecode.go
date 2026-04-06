@@ -11,6 +11,7 @@ import (
 type ClaudeCodeAgent struct {
 	hookManager    agentx.HookManager
 	commandManager agentx.CommandManager
+	rulesManager   agentx.RulesManager
 }
 
 // NewClaudeCodeAgent creates a new Claude Code agent.
@@ -107,6 +108,7 @@ func (a *ClaudeCodeAgent) Capabilities() agentx.Capabilities {
 		SystemPrompt:   true,
 		ProjectContext: true,  // CLAUDE.md
 		CustomCommands: true,  // .claude/commands/
+		Rules:          true,  // .claude/rules/
 		MinVersion:     "1.0", // when hooks were introduced
 	}
 }
@@ -129,6 +131,16 @@ func (a *ClaudeCodeAgent) CommandManager() agentx.CommandManager {
 // SetCommandManager sets the command manager (used during registration).
 func (a *ClaudeCodeAgent) SetCommandManager(cm agentx.CommandManager) {
 	a.commandManager = cm
+}
+
+// RulesManager returns the rules manager for Claude Code.
+func (a *ClaudeCodeAgent) RulesManager() agentx.RulesManager {
+	return a.rulesManager
+}
+
+// SetRulesManager sets the rules manager (used during registration).
+func (a *ClaudeCodeAgent) SetRulesManager(rm agentx.RulesManager) {
+	a.rulesManager = rm
 }
 
 // DetectVersion attempts to determine the installed Claude Code version.

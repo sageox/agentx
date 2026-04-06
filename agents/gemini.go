@@ -111,6 +111,11 @@ func (a *GeminiAgent) CommandManager() agentx.CommandManager {
 	return a.commandManager
 }
 
+// RulesManager returns the rules manager (nil if not supported).
+func (a *GeminiAgent) RulesManager() agentx.RulesManager {
+	return nil
+}
+
 func (a *GeminiAgent) SetCommandManager(cm agentx.CommandManager) {
 	a.commandManager = cm
 }

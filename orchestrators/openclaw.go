@@ -51,8 +51,9 @@ func (a *OpenClawAgent) Capabilities() agentx.Capabilities {
 	return agentx.Capabilities{MCPServers: true, SystemPrompt: true, ProjectContext: true}
 }
 
-func (a *OpenClawAgent) HookManager() agentx.HookManager     { return nil }
+func (a *OpenClawAgent) HookManager() agentx.HookManager       { return nil }
 func (a *OpenClawAgent) CommandManager() agentx.CommandManager { return nil }
+func (a *OpenClawAgent) RulesManager() agentx.RulesManager     { return nil }
 
 func (a *OpenClawAgent) DetectVersion(_ context.Context, env agentx.Environment) string {
 	return versionFromCommand(env, "openclaw", "--version")

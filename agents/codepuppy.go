@@ -102,6 +102,11 @@ func (a *CodePuppyAgent) CommandManager() agentx.CommandManager {
 	return a.commandManager
 }
 
+// RulesManager returns the rules manager (nil if not supported).
+func (a *CodePuppyAgent) RulesManager() agentx.RulesManager {
+	return nil
+}
+
 func (a *CodePuppyAgent) SetCommandManager(cm agentx.CommandManager) {
 	a.commandManager = cm
 }

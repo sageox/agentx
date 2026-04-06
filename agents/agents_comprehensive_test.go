@@ -55,7 +55,7 @@ func allAgentSpecs() []agentSpec {
 			supportsXDG:     false,
 			projectConfig:   ".claude",
 			contextFiles:    []string{"CLAUDE.md", "AGENTS.md"},
-			capabilities:    agentx.Capabilities{Hooks: true, MCPServers: true, SystemPrompt: true, ProjectContext: true, CustomCommands: true, MinVersion: "1.0"},
+			capabilities:    agentx.Capabilities{Hooks: true, MCPServers: true, SystemPrompt: true, ProjectContext: true, CustomCommands: true, Rules: true, MinVersion: "1.0"},
 			binaryName:      "claude",
 			supportsSession: true,
 			sessionEnvVar:   "CLAUDE_CODE_SESSION_ID",
