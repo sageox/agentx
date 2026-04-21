@@ -94,4 +94,5 @@ func RegisterDefaultAgents() {
 	// Orchestrators
 	agentx.DefaultRegistry.Register(orchestrators.NewOpenClawAgent())
 	agentx.DefaultRegistry.Register(orchestrators.NewConductorAgent())
+	agentx.DefaultRegistry.Register(orchestrators.NewGasCityAgent())
 }

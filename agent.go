@@ -130,6 +130,7 @@ const (
 	// Orchestrators
 	AgentTypeOpenClaw  AgentType = "openclaw"
 	AgentTypeConductor AgentType = "conductor"
+	AgentTypeGasCity   AgentType = "gascity"
 )
 
 // SupportedAgents is the canonical list of coding agents and orchestrators
@@ -157,6 +158,7 @@ var SupportedAgents = []AgentType{
 	// Orchestrators
 	AgentTypeOpenClaw,
 	AgentTypeConductor,
+	AgentTypeGasCity,
 }
 
 // AgentIdentity provides basic agent identification.

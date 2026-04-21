@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.8] - 2026-04-21
+
+### Added
+
+- **Gas City orchestrator**: Detection for Gas City multi-agent orchestration framework (`AgentTypeGasCity`). Detects via `GASCITY=1`, `GC_VERSION`, `GC_RIG`, `GC_PACK`, `GC_RUN_ID`, or `ORCHESTRATOR_ENV=gascity`. Supports session ID via `GC_RUN_ID`.
+
 ## [0.3.0] - 2026-03-10
 
 ### Added
