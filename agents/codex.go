@@ -40,21 +40,40 @@ func (a *CodexAgent) Role() agentx.AgentRole { return agentx.RoleAgent }
 //   - Native Codex runtime env vars (CODEX_CI, CODEX_SANDBOX, CODEX_THREAD_ID)
 //   - Secondary hints (.codex directory in cwd/PWD)
 func (a *CodexAgent) Detect(ctx context.Context, env agentx.Environment) (bool, error) {
-	// Explicit AGENT_ENV takes precedence over all native/runtime heuristics.
+	// AGENT_ENV="codex" is a strong caller override. But a non-"codex"
+	// AGENT_ENV must NOT suppress genuine Codex runtime signals — callers
+	// using DetectByType or a direct AgentDetector.Detect bypass the
+	// registry's two-phase flow, so this method has to honor runtime
+	// evidence on its own (CodeRabbit review, #527).
 	agentEnv := strings.ToLower(strings.TrimSpace(env.GetEnv("AGENT_ENV")))
-	if agentEnv != "" {
-		return agentEnv == "codex", nil
-	}
-
-	if env.GetEnv("CODEX_CI") != "" || env.GetEnv("CODEX_SANDBOX") != "" || env.GetEnv("CODEX_THREAD_ID") != "" {
+	if agentEnv == "codex" {
 		return true, nil
 	}
 
-	// Secondary hints for environments where Codex vars are unavailable.
+	if ok, err := a.DetectRuntime(ctx, env); err != nil || ok {
+		return ok, err
+	}
+
+	// Last-resort filesystem hints. Intentionally outside DetectRuntime
+	// so they cannot outrank another agent's AGENT_ENV during phase-1
+	// priority in the registry's two-phase flow (CodeRabbit follow-up
+	// on #9): a `.codex/` directory is common on a dev laptop but is
+	// not authoritative evidence that Codex is the active runtime.
 	if env.IsDir(".codex") {
 		return true, nil
 	}
 	if pwd := env.GetEnv("PWD"); pwd != "" && env.IsDir(filepath.Join(pwd, ".codex")) {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+// DetectRuntime reports Codex presence from runtime signals only —
+// no AGENT_ENV consultation and no filesystem hints. See RuntimeDetector
+// in agentx for the two-phase priority this enables (#527).
+func (a *CodexAgent) DetectRuntime(_ context.Context, env agentx.Environment) (bool, error) {
+	if env.GetEnv("CODEX_CI") != "" || env.GetEnv("CODEX_SANDBOX") != "" || env.GetEnv("CODEX_THREAD_ID") != "" {
 		return true, nil
 	}
 

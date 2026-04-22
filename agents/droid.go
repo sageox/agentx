@@ -45,6 +45,23 @@ func (a *DroidAgent) Role() agentx.AgentRole { return agentx.RoleAgent }
 //   - AGENT_ENV=droid or AGENT_ENV=factory-droid
 //   - Running from droid CLI (heuristic)
 func (a *DroidAgent) Detect(ctx context.Context, env agentx.Environment) (bool, error) {
+	if ok, _ := a.DetectRuntime(ctx, env); ok {
+		return true, nil
+	}
+
+	// Check AGENT_ENV (caller-provided override)
+	agentEnv := strings.ToLower(env.GetEnv("AGENT_ENV"))
+	if agentEnv == "droid" || agentEnv == "factory-droid" || agentEnv == "factory" {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+// DetectRuntime reports Droid presence from runtime signals only —
+// no AGENT_ENV consultation. See RuntimeDetector in agentx for the
+// two-phase priority this enables (#527).
+func (a *DroidAgent) DetectRuntime(_ context.Context, env agentx.Environment) (bool, error) {
 	// Check explicit DROID env vars
 	if env.GetEnv("DROID") == "1" || env.GetEnv("DROID_AGENT") == "1" {
 		return true, nil
@@ -52,12 +69,6 @@ func (a *DroidAgent) Detect(ctx context.Context, env agentx.Environment) (bool, 
 
 	// Check Factory-specific env var
 	if env.GetEnv("FACTORY_DROID") == "1" {
-		return true, nil
-	}
-
-	// Check AGENT_ENV
-	agentEnv := strings.ToLower(env.GetEnv("AGENT_ENV"))
-	if agentEnv == "droid" || agentEnv == "factory-droid" || agentEnv == "factory" {
 		return true, nil
 	}
 

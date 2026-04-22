@@ -54,13 +54,20 @@ func TestCodexDetect(t *testing.T) {
 			expected: true,
 		},
 		{
-			name: "AGENT_ENV non-codex overrides native Codex vars",
+			// CodeRabbit review on #9: a non-"codex" AGENT_ENV must not
+			// suppress genuine Codex runtime signals. Previously Detect
+			// returned false here, hiding the CODEX_CI / CODEX_THREAD_ID
+			// evidence from DetectByType callers that bypass the registry's
+			// two-phase flow. Post-fix, Codex honors its runtime evidence
+			// regardless of a foreign AGENT_ENV; cross-agent priority is
+			// resolved at the Detector layer.
+			name: "AGENT_ENV non-codex does NOT hide Codex runtime signals",
 			env: agentx.NewMockEnvironment(map[string]string{
 				"AGENT_ENV":       "claude-code",
 				"CODEX_CI":        "1",
 				"CODEX_THREAD_ID": "thread_123",
 			}),
-			expected: false,
+			expected: true,
 		},
 		{
 			name:     "no signals",

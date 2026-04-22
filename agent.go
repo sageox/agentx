@@ -181,7 +181,14 @@ type AgentIdentity interface {
 // AgentDetector provides agent detection capabilities.
 // Use this interface when you need to check if an agent is running or installed.
 type AgentDetector interface {
-	// Detect checks if this agent is currently running
+	// Detect checks if this agent is currently running.
+	//
+	// Returns true when EITHER authoritative runtime signals (env vars the
+	// agent itself sets, its config dirs, its process binary in the ancestor
+	// chain) OR the AGENT_ENV=<alias> override match. When both signals are
+	// present but for different agents, this method cannot distinguish them —
+	// the ambiguity is resolved at the Detector layer, which queries
+	// RuntimeDetector first and only falls back to Detect for AGENT_ENV.
 	Detect(ctx context.Context, env Environment) (bool, error)
 
 	// IsInstalled checks if this agent is installed on the system.
@@ -193,6 +200,26 @@ type AgentDetector interface {
 	// Returns empty string if version cannot be determined (best-effort).
 	// Strategies vary by agent: CLI --version, reading package.json, etc.
 	DetectVersion(ctx context.Context, env Environment) string
+}
+
+// RuntimeDetector is an optional extension to AgentDetector for agents that
+// can distinguish authoritative runtime signals from user-provided overrides
+// like AGENT_ENV. When both a runtime signal and an AGENT_ENV override are
+// present but claim different agents (e.g. running inside Claude Code
+// (CLAUDECODE=1) with AGENT_ENV=pi set by a stray CLAUDE.md instruction —
+// the #527 scenario), the Detector resolves the ambiguity by preferring
+// runtime signals. This interface is how each agent declares which of its
+// signals count as "runtime" (authoritative) vs. which count as "override".
+//
+// Agents that don't implement this interface are treated as "AGENT_ENV-only"
+// and never match during the runtime-priority phase — their Detect() still
+// runs in the fallback phase.
+type RuntimeDetector interface {
+	// DetectRuntime reports whether the agent is active based on runtime
+	// signals only. Implementations MUST NOT consult AGENT_ENV; that signal
+	// is reserved for the fallback phase where caller-provided overrides
+	// are honored in the absence of any conflicting runtime evidence.
+	DetectRuntime(ctx context.Context, env Environment) (bool, error)
 }
 
 // AgentConfig provides configuration path information.

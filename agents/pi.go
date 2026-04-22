@@ -44,14 +44,29 @@ func (a *PiAgent) Role() agentx.AgentRole { return agentx.RoleAgent }
 //   - AGENT_ENV=pi (standard agentx mechanism)
 //   - Running from pi-coding-agent binary (heuristic on $_)
 func (a *PiAgent) Detect(ctx context.Context, env agentx.Environment) (bool, error) {
-	// PI_CODING_AGENT_DIR is a real env var Pi uses for config directory override;
-	// its presence is a strong signal that Pi is the active agent
-	if _, ok := env.LookupEnv("PI_CODING_AGENT_DIR"); ok {
+	if ok, _ := a.DetectRuntime(ctx, env); ok {
 		return true, nil
 	}
 
-	// Check AGENT_ENV
-	if env.GetEnv("AGENT_ENV") == "pi" {
+	// Check AGENT_ENV (caller-provided override). Accept the full alias
+	// set advertised by AgentENVAliases() so callers that use
+	// AGENT_ENV=pi-coding-agent (the npm package name) are not silently
+	// rejected at phase 2. CodeRabbit review on #9.
+	switch env.GetEnv("AGENT_ENV") {
+	case "pi", "pi-coding-agent":
+		return true, nil
+	}
+
+	return false, nil
+}
+
+// DetectRuntime reports Pi presence from runtime signals only —
+// no AGENT_ENV consultation. See RuntimeDetector in agentx for the
+// two-phase priority this enables (#527).
+func (a *PiAgent) DetectRuntime(_ context.Context, env agentx.Environment) (bool, error) {
+	// PI_CODING_AGENT_DIR is a real env var Pi uses for config directory override;
+	// its presence is a strong signal that Pi is the active agent
+	if _, ok := env.LookupEnv("PI_CODING_AGENT_DIR"); ok {
 		return true, nil
 	}
 
