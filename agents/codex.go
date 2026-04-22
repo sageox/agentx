@@ -50,22 +50,30 @@ func (a *CodexAgent) Detect(ctx context.Context, env agentx.Environment) (bool, 
 		return true, nil
 	}
 
-	return a.DetectRuntime(ctx, env)
-}
-
-// DetectRuntime reports Codex presence from runtime signals only —
-// no AGENT_ENV consultation. See RuntimeDetector in agentx for the
-// two-phase priority this enables (#527).
-func (a *CodexAgent) DetectRuntime(_ context.Context, env agentx.Environment) (bool, error) {
-	if env.GetEnv("CODEX_CI") != "" || env.GetEnv("CODEX_SANDBOX") != "" || env.GetEnv("CODEX_THREAD_ID") != "" {
-		return true, nil
+	if ok, err := a.DetectRuntime(ctx, env); err != nil || ok {
+		return ok, err
 	}
 
-	// Secondary hints for environments where Codex vars are unavailable.
+	// Last-resort filesystem hints. Intentionally outside DetectRuntime
+	// so they cannot outrank another agent's AGENT_ENV during phase-1
+	// priority in the registry's two-phase flow (CodeRabbit follow-up
+	// on #9): a `.codex/` directory is common on a dev laptop but is
+	// not authoritative evidence that Codex is the active runtime.
 	if env.IsDir(".codex") {
 		return true, nil
 	}
 	if pwd := env.GetEnv("PWD"); pwd != "" && env.IsDir(filepath.Join(pwd, ".codex")) {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+// DetectRuntime reports Codex presence from runtime signals only —
+// no AGENT_ENV consultation and no filesystem hints. See RuntimeDetector
+// in agentx for the two-phase priority this enables (#527).
+func (a *CodexAgent) DetectRuntime(_ context.Context, env agentx.Environment) (bool, error) {
+	if env.GetEnv("CODEX_CI") != "" || env.GetEnv("CODEX_SANDBOX") != "" || env.GetEnv("CODEX_THREAD_ID") != "" {
 		return true, nil
 	}
 
