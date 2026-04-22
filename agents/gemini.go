@@ -52,20 +52,23 @@ func (a *GeminiAgent) Detect(ctx context.Context, env agentx.Environment) (bool,
 		return true, nil
 	}
 
+	// Weak heuristic: exec-path ($_) contains "gemini". Intentionally placed
+	// AFTER the AGENT_ENV check so a caller override wins over this hint,
+	// and NOT in DetectRuntime so it can't outrank a different agent's
+	// authoritative runtime signal during phase-1 detection.
+	if execPath := env.GetEnv("_"); strings.Contains(strings.ToLower(execPath), "gemini") {
+		return true, nil
+	}
+
 	return false, nil
 }
 
 // DetectRuntime reports Gemini CLI presence from runtime signals only —
-// no AGENT_ENV consultation. See RuntimeDetector in agentx for the
-// two-phase priority this enables (#527).
+// no AGENT_ENV consultation and no weak heuristics. See RuntimeDetector
+// in agentx for the two-phase priority this enables (#527).
 func (a *GeminiAgent) DetectRuntime(_ context.Context, env agentx.Environment) (bool, error) {
-	// Check explicit Gemini env vars
+	// Check explicit Gemini env vars (set by Gemini CLI)
 	if env.GetEnv("GEMINI") == "1" || env.GetEnv("GEMINI_AGENT") == "1" {
-		return true, nil
-	}
-
-	// Heuristic: check if running from gemini CLI
-	if execPath := env.GetEnv("_"); strings.Contains(strings.ToLower(execPath), "gemini") {
 		return true, nil
 	}
 

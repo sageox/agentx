@@ -48,8 +48,12 @@ func (a *PiAgent) Detect(ctx context.Context, env agentx.Environment) (bool, err
 		return true, nil
 	}
 
-	// Check AGENT_ENV (caller-provided override)
-	if env.GetEnv("AGENT_ENV") == "pi" {
+	// Check AGENT_ENV (caller-provided override). Accept the full alias
+	// set advertised by AgentENVAliases() so callers that use
+	// AGENT_ENV=pi-coding-agent (the npm package name) are not silently
+	// rejected at phase 2. CodeRabbit review on #9.
+	switch env.GetEnv("AGENT_ENV") {
+	case "pi", "pi-coding-agent":
 		return true, nil
 	}
 
