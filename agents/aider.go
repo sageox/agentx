@@ -41,13 +41,24 @@ func (a *AiderAgent) Role() agentx.AgentRole { return agentx.RoleAgent }
 //   - AGENT_ENV=aider
 //   - Running from aider command
 func (a *AiderAgent) Detect(ctx context.Context, env agentx.Environment) (bool, error) {
-	// Check AIDER env vars
-	if env.GetEnv("AIDER") == "1" || env.GetEnv("AIDER_AGENT") == "1" {
+	if ok, _ := a.DetectRuntime(ctx, env); ok {
 		return true, nil
 	}
 
-	// Check AGENT_ENV
+	// Check AGENT_ENV (caller-provided override)
 	if env.GetEnv("AGENT_ENV") == "aider" {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+// DetectRuntime reports Aider presence from runtime signals only —
+// no AGENT_ENV consultation. See RuntimeDetector in agentx for the
+// two-phase priority this enables (#527).
+func (a *AiderAgent) DetectRuntime(_ context.Context, env agentx.Environment) (bool, error) {
+	// Check AIDER env vars
+	if env.GetEnv("AIDER") == "1" || env.GetEnv("AIDER_AGENT") == "1" {
 		return true, nil
 	}
 

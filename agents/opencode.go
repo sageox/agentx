@@ -39,13 +39,24 @@ func (a *OpenCodeAgent) Role() agentx.AgentRole { return agentx.RoleAgent }
 //   - OPENCODE=1 or OPENCODE_AGENT=1
 //   - AGENT_ENV=opencode
 func (a *OpenCodeAgent) Detect(ctx context.Context, env agentx.Environment) (bool, error) {
-	// Check OPENCODE env vars
-	if env.GetEnv("OPENCODE") == "1" || env.GetEnv("OPENCODE_AGENT") == "1" {
+	if ok, _ := a.DetectRuntime(ctx, env); ok {
 		return true, nil
 	}
 
-	// Check AGENT_ENV
+	// Check AGENT_ENV (caller-provided override)
 	if env.GetEnv("AGENT_ENV") == "opencode" {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+// DetectRuntime reports OpenCode presence from runtime signals only —
+// no AGENT_ENV consultation. See RuntimeDetector in agentx for the
+// two-phase priority this enables (#527).
+func (a *OpenCodeAgent) DetectRuntime(_ context.Context, env agentx.Environment) (bool, error) {
+	// Check OPENCODE env vars
+	if env.GetEnv("OPENCODE") == "1" || env.GetEnv("OPENCODE_AGENT") == "1" {
 		return true, nil
 	}
 

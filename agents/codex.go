@@ -40,12 +40,21 @@ func (a *CodexAgent) Role() agentx.AgentRole { return agentx.RoleAgent }
 //   - Native Codex runtime env vars (CODEX_CI, CODEX_SANDBOX, CODEX_THREAD_ID)
 //   - Secondary hints (.codex directory in cwd/PWD)
 func (a *CodexAgent) Detect(ctx context.Context, env agentx.Environment) (bool, error) {
-	// Explicit AGENT_ENV takes precedence over all native/runtime heuristics.
+	// Explicit AGENT_ENV takes precedence over all native/runtime heuristics
+	// within Codex's own Detect path. Two-phase detection at the Detector
+	// layer additionally gives runtime signals priority across agents (#527).
 	agentEnv := strings.ToLower(strings.TrimSpace(env.GetEnv("AGENT_ENV")))
 	if agentEnv != "" {
 		return agentEnv == "codex", nil
 	}
 
+	return a.DetectRuntime(ctx, env)
+}
+
+// DetectRuntime reports Codex presence from runtime signals only —
+// no AGENT_ENV consultation. See RuntimeDetector in agentx for the
+// two-phase priority this enables (#527).
+func (a *CodexAgent) DetectRuntime(_ context.Context, env agentx.Environment) (bool, error) {
 	if env.GetEnv("CODEX_CI") != "" || env.GetEnv("CODEX_SANDBOX") != "" || env.GetEnv("CODEX_THREAD_ID") != "" {
 		return true, nil
 	}

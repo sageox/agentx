@@ -43,13 +43,24 @@ func (a *GeminiAgent) Role() agentx.AgentRole { return agentx.RoleAgent }
 //   - AGENT_ENV=gemini
 //   - Running from gemini binary (heuristic on $_)
 func (a *GeminiAgent) Detect(ctx context.Context, env agentx.Environment) (bool, error) {
-	// Check explicit Gemini env vars
-	if env.GetEnv("GEMINI") == "1" || env.GetEnv("GEMINI_AGENT") == "1" {
+	if ok, _ := a.DetectRuntime(ctx, env); ok {
 		return true, nil
 	}
 
-	// Check AGENT_ENV
+	// Check AGENT_ENV (caller-provided override)
 	if strings.ToLower(env.GetEnv("AGENT_ENV")) == "gemini" {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+// DetectRuntime reports Gemini CLI presence from runtime signals only —
+// no AGENT_ENV consultation. See RuntimeDetector in agentx for the
+// two-phase priority this enables (#527).
+func (a *GeminiAgent) DetectRuntime(_ context.Context, env agentx.Environment) (bool, error) {
+	// Check explicit Gemini env vars
+	if env.GetEnv("GEMINI") == "1" || env.GetEnv("GEMINI_AGENT") == "1" {
 		return true, nil
 	}
 

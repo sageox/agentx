@@ -60,6 +60,21 @@ type mockLifecycleDetectableAgent struct {
 func (a *mockLifecycleDetectableAgent) EventPhases() EventPhaseMap { return a.phases }
 func (a *mockLifecycleDetectableAgent) AgentENVAliases() []string  { return a.aliases }
 
+// mockRuntimeDetectableAgent adds RuntimeDetector to mockDetectableAgent.
+// Used to validate the two-phase detection priority enforced by the
+// Detector — runtime signals outrank AGENT_ENV overrides (#527).
+type mockRuntimeDetectableAgent struct {
+	mockDetectableAgent
+	detectRuntimeFn func(ctx context.Context, env Environment) (bool, error)
+}
+
+func (a *mockRuntimeDetectableAgent) DetectRuntime(ctx context.Context, env Environment) (bool, error) {
+	if a.detectRuntimeFn != nil {
+		return a.detectRuntimeFn(ctx, env)
+	}
+	return false, nil
+}
+
 // --- DetectAll tests ---
 
 func TestDetectAll(t *testing.T) {
@@ -453,6 +468,134 @@ func TestCurrentAgent_Detected(t *testing.T) {
 	agent := CurrentAgent()
 	require.NotNil(t, agent)
 	assert.Equal(t, AgentTypeClaudeCode, agent.Type())
+}
+
+// TestDetectByRole_RuntimeOutranksAgentEnv is the core #527 regression guard:
+// when a runtime agent (e.g. Claude Code via CLAUDECODE=1) and an AGENT_ENV
+// override (e.g. AGENT_ENV=pi from a stray CLAUDE.md instruction) disagree,
+// the Detector MUST return the runtime-detected agent, not the one claimed
+// by the override.
+//
+// Failure prevented: a Claude Code session silently registering as Pi in
+// agent_instances.jsonl, routing through the wrong session adapter, and
+// poisoning CLAUDE_ENV_FILE with AGENT_ENV=pi for every subsequent subprocess.
+func TestDetectByRole_RuntimeOutranksAgentEnv(t *testing.T) {
+	orig := DefaultRegistry
+	defer func() { DefaultRegistry = orig }()
+
+	DefaultRegistry = NewRegistry()
+
+	// Pi-like agent: matches on AGENT_ENV=pi (override), no runtime signal.
+	DefaultRegistry.Register(&mockRuntimeDetectableAgent{
+		mockDetectableAgent: mockDetectableAgent{
+			agentType: AgentTypePi,
+			name:      "Pi",
+			detectFn: func(_ context.Context, env Environment) (bool, error) {
+				return env.GetEnv("AGENT_ENV") == "pi", nil
+			},
+		},
+		// Pi has no runtime signal in this scenario.
+		detectRuntimeFn: func(_ context.Context, _ Environment) (bool, error) { return false, nil },
+	})
+
+	// Claude-like agent: matches on CLAUDECODE=1 (runtime) or AGENT_ENV=claude-code.
+	DefaultRegistry.Register(&mockRuntimeDetectableAgent{
+		mockDetectableAgent: mockDetectableAgent{
+			agentType: AgentTypeClaudeCode,
+			name:      "Claude Code",
+			detectFn: func(_ context.Context, env Environment) (bool, error) {
+				if env.GetEnv("CLAUDECODE") == "1" {
+					return true, nil
+				}
+				return env.GetEnv("AGENT_ENV") == "claude-code", nil
+			},
+		},
+		detectRuntimeFn: func(_ context.Context, env Environment) (bool, error) {
+			return env.GetEnv("CLAUDECODE") == "1", nil
+		},
+	})
+
+	// Scenario: both signals are set and disagree.
+	env := NewMockEnvironment(map[string]string{
+		"CLAUDECODE": "1",
+		"AGENT_ENV":  "pi",
+	})
+
+	detected, err := NewDetectorWithEnv(env).Detect(context.Background())
+	require.NoError(t, err)
+	require.NotNil(t, detected)
+	assert.Equal(t, AgentTypeClaudeCode, detected.Type(),
+		"runtime signal (CLAUDECODE=1) must outrank AGENT_ENV=pi")
+}
+
+// TestDetectByRole_AgentEnvFallback confirms phase 2: when no runtime
+// signal matches, the AGENT_ENV override is honored as the fallback.
+// This preserves the existing escape-hatch behavior for headless / CI
+// contexts where only AGENT_ENV is available.
+func TestDetectByRole_AgentEnvFallback(t *testing.T) {
+	orig := DefaultRegistry
+	defer func() { DefaultRegistry = orig }()
+
+	DefaultRegistry = NewRegistry()
+
+	DefaultRegistry.Register(&mockRuntimeDetectableAgent{
+		mockDetectableAgent: mockDetectableAgent{
+			agentType: AgentTypePi,
+			name:      "Pi",
+			detectFn: func(_ context.Context, env Environment) (bool, error) {
+				return env.GetEnv("AGENT_ENV") == "pi", nil
+			},
+		},
+		detectRuntimeFn: func(_ context.Context, _ Environment) (bool, error) { return false, nil },
+	})
+
+	DefaultRegistry.Register(&mockRuntimeDetectableAgent{
+		mockDetectableAgent: mockDetectableAgent{
+			agentType: AgentTypeClaudeCode,
+			name:      "Claude Code",
+			detectFn: func(_ context.Context, env Environment) (bool, error) {
+				return env.GetEnv("CLAUDECODE") == "1", nil
+			},
+		},
+		detectRuntimeFn: func(_ context.Context, env Environment) (bool, error) {
+			return env.GetEnv("CLAUDECODE") == "1", nil
+		},
+	})
+
+	// Only AGENT_ENV is set — no runtime signals from any agent.
+	env := NewMockEnvironment(map[string]string{"AGENT_ENV": "pi"})
+
+	detected, err := NewDetectorWithEnv(env).Detect(context.Background())
+	require.NoError(t, err)
+	require.NotNil(t, detected)
+	assert.Equal(t, AgentTypePi, detected.Type(),
+		"AGENT_ENV override must win when no runtime signal claims the process")
+}
+
+// TestDetectByRole_LegacyAgentHasNoRuntimeDetector confirms backward
+// compatibility: agents that don't implement RuntimeDetector still work
+// via the phase-2 fallback — they simply never match in phase 1.
+func TestDetectByRole_LegacyAgentHasNoRuntimeDetector(t *testing.T) {
+	orig := DefaultRegistry
+	defer func() { DefaultRegistry = orig }()
+
+	DefaultRegistry = NewRegistry()
+
+	// Plain agent (no RuntimeDetector) that matches on AGENT_ENV only.
+	DefaultRegistry.Register(&mockDetectableAgent{
+		agentType: AgentTypeCursor,
+		name:      "Cursor",
+		detectFn: func(_ context.Context, env Environment) (bool, error) {
+			return env.GetEnv("AGENT_ENV") == "cursor", nil
+		},
+	})
+
+	env := NewMockEnvironment(map[string]string{"AGENT_ENV": "cursor"})
+	detected, err := NewDetectorWithEnv(env).Detect(context.Background())
+	require.NoError(t, err)
+	require.NotNil(t, detected)
+	assert.Equal(t, AgentTypeCursor, detected.Type(),
+		"legacy agent without RuntimeDetector must still match via phase-2 fallback")
 }
 
 func TestCurrentOrchestrator_None(t *testing.T) {

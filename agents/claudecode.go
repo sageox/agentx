@@ -49,6 +49,24 @@ func (a *ClaudeCodeAgent) Role() agentx.AgentRole { return agentx.RoleAgent }
 //
 //	"command": "AGENT_ENV=claude-code <your-command>"
 func (a *ClaudeCodeAgent) Detect(ctx context.Context, env agentx.Environment) (bool, error) {
+	if ok, _ := a.DetectRuntime(ctx, env); ok {
+		return true, nil
+	}
+
+	// Check explicit AGENT_ENV (manual override or set by hooks)
+	agentEnv := env.GetEnv("AGENT_ENV")
+	switch agentEnv {
+	case "claude-code", "claudecode", "claude":
+		return true, nil
+	}
+
+	return false, nil
+}
+
+// DetectRuntime reports Claude Code presence from runtime signals only —
+// no AGENT_ENV consultation. See RuntimeDetector in agentx for the
+// two-phase priority this enables (#527).
+func (a *ClaudeCodeAgent) DetectRuntime(_ context.Context, env agentx.Environment) (bool, error) {
 	// Check CLAUDECODE env var (set by Claude Code itself)
 	if env.GetEnv("CLAUDECODE") == "1" {
 		return true, nil
@@ -63,13 +81,6 @@ func (a *ClaudeCodeAgent) Detect(ctx context.Context, env agentx.Environment) (b
 
 	// Check CLAUDE_CODE_SESSION_ID (set by Claude Code for session tracking)
 	if env.GetEnv("CLAUDE_CODE_SESSION_ID") != "" {
-		return true, nil
-	}
-
-	// Check explicit AGENT_ENV (manual override or set by hooks)
-	agentEnv := env.GetEnv("AGENT_ENV")
-	switch agentEnv {
-	case "claude-code", "claudecode", "claude":
 		return true, nil
 	}
 

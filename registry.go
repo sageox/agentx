@@ -100,10 +100,41 @@ func (d *detector) DetectOrchestrator(ctx context.Context) (Agent, error) {
 }
 
 // detectByRole finds the first detected agent matching the given role.
-// Each agent's Detect() handles AGENT_ENV priority internally.
+//
+// Two-phase priority:
+//  1. Runtime signals (authoritative). Agents that implement RuntimeDetector
+//     are asked whether any of their non-AGENT_ENV evidence is present
+//     (CLAUDECODE=1, CLAUDE_CODE_ENTRYPOINT, PI_CODING_AGENT_DIR, etc.).
+//     The first match wins regardless of what AGENT_ENV says.
+//  2. AGENT_ENV fallback. If no runtime signal claimed the process, fall
+//     back to the existing Detect() which also honors AGENT_ENV=<alias>.
+//
+// This resolves the #527 class of bug: a Claude Code session where a stray
+// CLAUDE.md instruction sets AGENT_ENV=pi no longer silently mis-routes
+// through the Pi adapter. Runtime signals (CLAUDECODE=1) outrank the
+// caller-provided override.
 func (d *detector) detectByRole(ctx context.Context, role AgentRole) (Agent, error) {
 	env := d.getEnv()
 
+	// Phase 1: runtime signals only
+	for _, agent := range d.registry.List() {
+		if agent.Role() != role {
+			continue
+		}
+		rd, ok := agent.(RuntimeDetector)
+		if !ok {
+			continue
+		}
+		detected, err := rd.DetectRuntime(ctx, env)
+		if err != nil {
+			continue
+		}
+		if detected {
+			return agent, nil
+		}
+	}
+
+	// Phase 2: fallback to AGENT_ENV-inclusive Detect
 	for _, agent := range d.registry.List() {
 		if agent.Role() != role {
 			continue

@@ -39,6 +39,22 @@ func (a *AmpAgent) Role() agentx.AgentRole { return agentx.RoleAgent }
 //   - AMP_THREAD_URL is set (present in all Amp sessions)
 //   - AGENT_ENV=amp
 func (a *AmpAgent) Detect(ctx context.Context, env agentx.Environment) (bool, error) {
+	if ok, _ := a.DetectRuntime(ctx, env); ok {
+		return true, nil
+	}
+
+	// Check AGENT_ENV (caller-provided override)
+	if env.GetEnv("AGENT_ENV") == "amp" {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+// DetectRuntime reports Amp presence from runtime signals only —
+// no AGENT_ENV consultation. See RuntimeDetector in agentx for the
+// two-phase priority this enables (#527).
+func (a *AmpAgent) DetectRuntime(_ context.Context, env agentx.Environment) (bool, error) {
 	// Check AMP env vars
 	if env.GetEnv("AMP") == "1" || env.GetEnv("AMP_AGENT") == "1" {
 		return true, nil
@@ -46,11 +62,6 @@ func (a *AmpAgent) Detect(ctx context.Context, env agentx.Environment) (bool, er
 
 	// AMP_THREAD_URL is set by Amp in all sessions
 	if env.GetEnv("AMP_THREAD_URL") != "" {
-		return true, nil
-	}
-
-	// Check AGENT_ENV
-	if env.GetEnv("AGENT_ENV") == "amp" {
 		return true, nil
 	}
 
