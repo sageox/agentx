@@ -10,9 +10,12 @@ import (
 
 // PiAgent implements Agent for Pi Coding Agent (https://shittycodingagent.ai/).
 // Pi is a minimal terminal coding harness by Mario Zechner, installed via
-// npm (@mariozechner/pi-coding-agent). It sets zero self-identification env vars
-// in child processes, so detection relies on PI_CODING_AGENT_DIR (config override)
-// and the $_ heuristic matching "pi-coding-agent" (the npm package name).
+// npm (@mariozechner/pi-coding-agent). pi-mono's cli.ts sets
+// process.env.PI_CODING_AGENT="true" at startup; Node's child_process inherits
+// process.env, so this propagates to every subprocess pi spawns (including the
+// bash tool). Detection prefers that signal, then falls back to
+// PI_CODING_AGENT_DIR (config override) and the $_ heuristic matching
+// "pi-coding-agent" (the npm package name) for older pi releases.
 type PiAgent struct {
 	hookManager    agentx.HookManager
 	commandManager agentx.CommandManager
@@ -40,6 +43,7 @@ func (a *PiAgent) Role() agentx.AgentRole { return agentx.RoleAgent }
 // Detect checks if Pi is the active agent.
 //
 // Detection methods:
+//   - PI_CODING_AGENT is truthy (set by pi-mono cli.ts; inherited by subprocesses)
 //   - PI_CODING_AGENT_DIR is set (real env var Pi checks for config override)
 //   - AGENT_ENV=pi (standard agentx mechanism)
 //   - Running from pi-coding-agent binary (heuristic on $_)
@@ -64,6 +68,13 @@ func (a *PiAgent) Detect(ctx context.Context, env agentx.Environment) (bool, err
 // no AGENT_ENV consultation. See RuntimeDetector in agentx for the
 // two-phase priority this enables (#527).
 func (a *PiAgent) DetectRuntime(_ context.Context, env agentx.Environment) (bool, error) {
+	// pi-mono cli.ts sets process.env.PI_CODING_AGENT="true" at startup; Node's
+	// child_process inherits process.env, so this propagates to every subprocess
+	// pi spawns (including the bash tool). Cheapest and most reliable signal.
+	if v := env.GetEnv("PI_CODING_AGENT"); v == "true" || v == "1" {
+		return true, nil
+	}
+
 	// PI_CODING_AGENT_DIR is a real env var Pi uses for config directory override;
 	// its presence is a strong signal that Pi is the active agent
 	if _, ok := env.LookupEnv("PI_CODING_AGENT_DIR"); ok {
