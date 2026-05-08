@@ -18,6 +18,10 @@ func TestPiDetect(t *testing.T) {
 		envVars  map[string]string
 		expected bool
 	}{
+		{"PI_CODING_AGENT=true", map[string]string{"PI_CODING_AGENT": "true"}, true},
+		{"PI_CODING_AGENT=1", map[string]string{"PI_CODING_AGENT": "1"}, true},
+		{"PI_CODING_AGENT=false ignored", map[string]string{"PI_CODING_AGENT": "false"}, false},
+		{"PI_CODING_AGENT empty ignored", map[string]string{"PI_CODING_AGENT": ""}, false},
 		{"PI_CODING_AGENT_DIR set", map[string]string{"PI_CODING_AGENT_DIR": "/custom/pi"}, true},
 		{"AGENT_ENV=pi", map[string]string{"AGENT_ENV": "pi"}, true},
 		{"exec path heuristic", map[string]string{"_": "/usr/local/bin/pi-coding-agent"}, true},
@@ -55,11 +59,11 @@ func TestPiCapabilities(t *testing.T) {
 	agent := NewPiAgent()
 	caps := agent.Capabilities()
 
-	assert.False(t, caps.Hooks)
+	assert.True(t, caps.Hooks) // via TypeScript extension bridge
 	assert.True(t, caps.MCPServers)
 	assert.True(t, caps.SystemPrompt)
 	assert.True(t, caps.ProjectContext)
-	assert.False(t, caps.CustomCommands)
+	assert.True(t, caps.CustomCommands) // via TypeScript extension bridge
 }
 
 func TestPiUserConfigPath(t *testing.T) {
@@ -127,8 +131,11 @@ func TestPiIsInstalled(t *testing.T) {
 
 func TestPiSession(t *testing.T) {
 	agent := NewPiAgent()
-	assert.False(t, agent.SupportsSession())
+	assert.True(t, agent.SupportsSession())
 
-	env := agentx.NewMockEnvironment(nil)
-	assert.Equal(t, "", agent.SessionID(env))
+	emptyEnv := agentx.NewMockEnvironment(nil)
+	assert.Equal(t, "", agent.SessionID(emptyEnv))
+
+	env := agentx.NewMockEnvironment(map[string]string{"PI_SESSION_ID": "sess_abc123"})
+	assert.Equal(t, "sess_abc123", agent.SessionID(env))
 }
