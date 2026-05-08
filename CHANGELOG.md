@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.10] - 2026-05-08
+
+### Added
+
+- **Pi `PI_CODING_AGENT` detection**: `pi-mono`'s CLI sets `process.env.PI_CODING_AGENT="true"` at startup, which Node propagates to every subprocess pi spawns (including the bash tool). Add a truthy check (`"true"`/`"1"`) as the first, cheapest signal in `DetectRuntime`, ahead of `PI_CODING_AGENT_DIR` and the `$_` heuristic.
+
+### Fixed
+
+- Refresh stale Pi capability assertions to reflect prior changes: `Hooks` and `CustomCommands` are now `true` (Pi has a TypeScript extension bridge); `SupportsSession` is `true` and reads `PI_SESSION_ID`; remove Pi from `TestNonLifecycleAgents_DoNotImplementMapper`. Update the Pi spec in `agents_comprehensive_test.go` (capabilities, session env var, lifecycle metadata: `envAliases`, `eventPhaseCount=5`).
+
 ## [0.1.8] - 2026-04-21
 
 ### Added
