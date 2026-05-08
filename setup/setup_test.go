@@ -3,8 +3,9 @@ package setup
 import (
 	"testing"
 
-	"github.com/sageox/agentx"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/sageox/agentx"
 )
 
 func TestRegisterDefaultAgents_RegistersAllSupportedAgents(t *testing.T) {

@@ -4,8 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/sageox/agentx"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/sageox/agentx"
 )
 
 func TestOpenClawAgent_Detect(t *testing.T) {

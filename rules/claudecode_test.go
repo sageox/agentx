@@ -7,9 +7,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sageox/agentx"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sageox/agentx"
 )
 
 func TestClaudeCodeRulesManager_RulesDir(t *testing.T) {

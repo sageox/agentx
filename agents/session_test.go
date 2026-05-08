@@ -3,8 +3,9 @@ package agents
 import (
 	"testing"
 
-	"github.com/sageox/agentx"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/sageox/agentx"
 )
 
 // TestAgentSessionSupport verifies SupportsSession() and SessionID() for all agents.

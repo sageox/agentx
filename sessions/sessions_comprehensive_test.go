@@ -861,7 +861,7 @@ func TestGemini_RoleFromAuthor(t *testing.T) {
 		{"gemini", RoleAssistant},
 		{"system", RoleSystem},
 		{"unknown", RoleUser},
-		{"USER", RoleUser},     // case-insensitive
+		{"USER", RoleUser},        // case-insensitive
 		{"Gemini", RoleAssistant}, // case-insensitive
 		{"SYSTEM", RoleSystem},
 		{"", RoleUser},

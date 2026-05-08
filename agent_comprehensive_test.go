@@ -32,10 +32,10 @@ func TestReadCommandFiles_MDFiles(t *testing.T) {
 
 func TestReadCommandFiles_MixedFiles(t *testing.T) {
 	fsys := fstest.MapFS{
-		"dir/readme.md":  {Data: []byte("# Readme\n")},
+		"dir/readme.md":   {Data: []byte("# Readme\n")},
 		"dir/config.json": {Data: []byte("{}")},
-		"dir/notes.txt":  {Data: []byte("notes")},
-		"dir/plan.md":    {Data: []byte("# Plan\n")},
+		"dir/notes.txt":   {Data: []byte("notes")},
+		"dir/plan.md":     {Data: []byte("# Plan\n")},
 	}
 
 	cmds, err := ReadCommandFiles(fsys, "dir")
@@ -49,7 +49,7 @@ func TestReadCommandFiles_MixedFiles(t *testing.T) {
 
 func TestReadCommandFiles_SkipsSubdirectories(t *testing.T) {
 	fsys := fstest.MapFS{
-		"dir/top.md":       {Data: []byte("# Top\n")},
+		"dir/top.md":        {Data: []byte("# Top\n")},
 		"dir/sub/nested.md": {Data: []byte("# Nested\n")},
 		"dir/sub":           {Mode: 1<<31 | 0o755},
 	}

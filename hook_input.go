@@ -22,8 +22,8 @@ const maxHookInputSize = 256 * 1024
 type HookInput struct {
 	SessionID     string          `json:"session_id"`
 	HookEventName string          `json:"hook_event_name"`
-	Source        string          `json:"source,omitempty"`         // session start/end source (startup, resume, clear, compact)
-	Trigger       string          `json:"trigger,omitempty"`        // compact trigger (manual, auto)
+	Source        string          `json:"source,omitempty"`  // session start/end source (startup, resume, clear, compact)
+	Trigger       string          `json:"trigger,omitempty"` // compact trigger (manual, auto)
 	ToolName      string          `json:"tool_name,omitempty"`
 	ToolInput     json.RawMessage `json:"tool_input,omitempty"`
 	ToolResponse  json.RawMessage `json:"tool_response,omitempty"`

@@ -16,12 +16,12 @@ type geminiProvider struct{}
 
 // gemConversationRecord represents a Gemini session file.
 type gemConversationRecord struct {
-	SessionID   string               `json:"sessionId"`
-	ProjectHash string               `json:"projectHash"`
-	StartTime   int64                `json:"startTime"`
-	LastUpdated int64                `json:"lastUpdated"`
-	Messages    []gemMessageRecord   `json:"messages"`
-	Summary     string               `json:"summary"`
+	SessionID   string             `json:"sessionId"`
+	ProjectHash string             `json:"projectHash"`
+	StartTime   int64              `json:"startTime"`
+	LastUpdated int64              `json:"lastUpdated"`
+	Messages    []gemMessageRecord `json:"messages"`
+	Summary     string             `json:"summary"`
 }
 
 // gemMessageRecord represents a single message in a Gemini session.

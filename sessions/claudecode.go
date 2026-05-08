@@ -53,10 +53,10 @@ type ccMessage struct {
 
 // ccUsage represents token usage in Claude Code format.
 type ccUsage struct {
-	Input       int64 `json:"input_tokens"`
-	Output      int64 `json:"output_tokens"`
-	CacheRead   int64 `json:"cache_read_tokens,omitempty"`
-	CacheWrite  int64 `json:"cache_write_tokens,omitempty"`
+	Input      int64 `json:"input_tokens"`
+	Output     int64 `json:"output_tokens"`
+	CacheRead  int64 `json:"cache_read_tokens,omitempty"`
+	CacheWrite int64 `json:"cache_write_tokens,omitempty"`
 }
 
 // ccContentBlock represents a content block (for polymorphic content handling).
@@ -117,14 +117,14 @@ func (p *claudeCodeProvider) ListSessions(projectPath string) ([]SessionSummary,
 	var summaries []SessionSummary
 	for sessionID, entry := range index.Sessions {
 		summaries = append(summaries, SessionSummary{
-			ID:           sessionID,
-			AgentType:    "claude-code",
-			ProjectPath:  entry.ProjectPath,
-			GitBranch:    entry.GitBranch,
-			FirstPrompt:  entry.FirstPrompt,
-			Summary:      entry.Summary,
-			Created:      time.Unix(0, entry.Created*1000000),
-			Modified:     time.Unix(0, entry.Modified*1000000),
+			ID:          sessionID,
+			AgentType:   "claude-code",
+			ProjectPath: entry.ProjectPath,
+			GitBranch:   entry.GitBranch,
+			FirstPrompt: entry.FirstPrompt,
+			Summary:     entry.Summary,
+			Created:     time.Unix(0, entry.Created*1000000),
+			Modified:    time.Unix(0, entry.Modified*1000000),
 		})
 	}
 
@@ -244,14 +244,14 @@ func (p *claudeCodeProvider) parseSessionFile(filePath string, sessionID string,
 
 	session := &Session{
 		SessionSummary: SessionSummary{
-			ID:           sessionID,
-			AgentType:    "claude-code",
-			ProjectPath:  projectPath,
-			GitBranch:    indexEntry.GitBranch,
-			FirstPrompt:  indexEntry.FirstPrompt,
-			Summary:      indexEntry.Summary,
-			Created:      time.Unix(0, indexEntry.Created*1000000),
-			Modified:     time.Unix(0, indexEntry.Modified*1000000),
+			ID:          sessionID,
+			AgentType:   "claude-code",
+			ProjectPath: projectPath,
+			GitBranch:   indexEntry.GitBranch,
+			FirstPrompt: indexEntry.FirstPrompt,
+			Summary:     indexEntry.Summary,
+			Created:     time.Unix(0, indexEntry.Created*1000000),
+			Modified:    time.Unix(0, indexEntry.Modified*1000000),
 		},
 	}
 

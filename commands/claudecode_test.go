@@ -6,9 +6,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/sageox/agentx"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sageox/agentx"
 )
 
 func TestClaudeCodeCommandManager_Install(t *testing.T) {

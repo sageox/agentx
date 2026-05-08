@@ -212,19 +212,19 @@ type MockEnvironment struct {
 	Cache         string
 	OS            string
 	HomeError     error
-	ExecOutputs   map[string][]byte  // keyed by command name
-	ExecErrors    map[string]error   // keyed by command name
-	Files         map[string][]byte  // keyed by file path
-	PathBinaries  map[string]string  // keyed by binary name -> path
-	ExistingFiles map[string]bool    // keyed by path
-	ExistingDirs  map[string]bool    // keyed by path
-	WrittenFiles  map[string][]byte  // tracks WriteFile calls
-	CreatedDirs   map[string]bool    // tracks MkdirAll calls
-	RemovedPaths  map[string]bool    // tracks Remove calls
-	WriteErrors   map[string]error   // inject write errors by path
-	RemoveErrors  map[string]error   // inject remove errors by path
+	ExecOutputs   map[string][]byte        // keyed by command name
+	ExecErrors    map[string]error         // keyed by command name
+	Files         map[string][]byte        // keyed by file path
+	PathBinaries  map[string]string        // keyed by binary name -> path
+	ExistingFiles map[string]bool          // keyed by path
+	ExistingDirs  map[string]bool          // keyed by path
+	WrittenFiles  map[string][]byte        // tracks WriteFile calls
+	CreatedDirs   map[string]bool          // tracks MkdirAll calls
+	RemovedPaths  map[string]bool          // tracks Remove calls
+	WriteErrors   map[string]error         // inject write errors by path
+	RemoveErrors  map[string]error         // inject remove errors by path
 	DirEntries    map[string][]os.DirEntry // mock ReadDir results
-	StatErrors    map[string]error   // inject stat errors by path
+	StatErrors    map[string]error         // inject stat errors by path
 }
 
 // NewMockEnvironment creates a mock environment for testing.

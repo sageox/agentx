@@ -4,9 +4,10 @@ import (
 	"context"
 	"testing"
 
-	"github.com/sageox/agentx"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sageox/agentx"
 )
 
 // agentSpec captures the expected values for a single agent implementation,
@@ -467,7 +468,7 @@ func allAgentSpecs() []agentSpec {
 				{"CODEX_CI set", map[string]string{"CODEX_CI": "1"}, true},
 				{"CODEX_SANDBOX set", map[string]string{"CODEX_SANDBOX": "workspace-write"}, true},
 				{"CODEX_THREAD_ID set", map[string]string{"CODEX_THREAD_ID": "thread_123"}, true},
-				{"AGENT_ENV non-codex overrides native vars", map[string]string{"AGENT_ENV": "claude-code", "CODEX_CI": "1"}, false},
+				{"AGENT_ENV non-codex does not hide native vars", map[string]string{"AGENT_ENV": "claude-code", "CODEX_CI": "1"}, true},
 				{"no env vars", map[string]string{}, false},
 			},
 		},

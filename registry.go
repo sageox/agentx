@@ -57,7 +57,6 @@ func (r *registry) Detector() Detector {
 	return &detector{registry: r}
 }
 
-
 // detector implements Detector using a registry.
 type detector struct {
 	registry *registry

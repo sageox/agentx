@@ -7,9 +7,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/sageox/agentx"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sageox/agentx"
 )
 
 // newTestManager creates a ClaudeCodeHookManager with configPath set to a temp directory.
@@ -470,9 +471,9 @@ func TestClaudeCodeHookManager_Uninstall(t *testing.T) {
 
 		writeJSON(t, mcpPath, map[string]interface{}{
 			"mcpServers": map[string]interface{}{
-				"sageox":    map[string]interface{}{"command": "ox"},
-				"tool-a":    map[string]interface{}{"command": "a"},
-				"tool-b":    map[string]interface{}{"command": "b"},
+				"sageox": map[string]interface{}{"command": "ox"},
+				"tool-a": map[string]interface{}{"command": "a"},
+				"tool-b": map[string]interface{}{"command": "b"},
 			},
 		})
 
