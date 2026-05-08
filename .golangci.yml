@@ -1,20 +1,48 @@
-run:
-  timeout: 5m
+version: "2"
 
 linters:
+  # Default v2 linter set: errcheck, govet, ineffassign, staticcheck, unused.
+  # gofmt and goimports moved to formatters in v2 (configured below).
+  settings:
+    errcheck:
+      exclude-functions:
+        - (io.Closer).Close
+        - (*os.File).Close
+        - os.Chmod
+        - os.MkdirAll
+        - (github.com/sageox/agentx.Registry).Register
+        - (*github.com/sageox/agentx.DefaultRegistryImpl).Register
+        - (github.com/sageox/agentx.Environment).Remove
+        - fmt.Sscanf
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+    rules:
+      # Test files routinely use Close/Chmod/Register without error checks
+      # for setup and cleanup. Those errors aren't actionable in tests.
+      - path: _test\.go
+        linters:
+          - errcheck
+      # QF1011 flags `var _ Iface = impl` interface-conformance assertions,
+      # but the explicit type is the whole point of the pattern.
+      - text: "QF1011"
+        linters:
+          - staticcheck
+
+formatters:
   enable:
-    - errcheck
-    - gosimple
-    - govet
-    - ineffassign
-    - staticcheck
-    - unused
     - gofmt
     - goimports
-
-linters-settings:
-  goimports:
-    local-prefixes: github.com/sageox/agentx
-
-issues:
-  exclude-use-default: false
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/sageox/agentx
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
