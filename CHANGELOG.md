@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.11] - 2026-07-23
+
+### Added
+
+- **Buzz orchestrator**: Detection for Block's Buzz (`AgentTypeBuzz`), a chat/agent platform whose `buzz-acp` harness spawns Claude Code / Codex / Goose over ACP. Detects via `ORCHESTRATOR_ENV=buzz` (generic hatch), `BUZZ_ACP_AGENT_COMMAND` (best-effort env secondary), or — the reliable, config-independent signal — the `buzz-acp` process appearing in the ancestry chain. Deliberately does not sniff the workstation-scoped `BUZZ_RELAY_URL` / `BUZZ_PRIVATE_KEY`, which would false-tag a plain agent session in a Buzz user's shell.
+- **`Environment.ProcessAncestry()`**: New interface method returning ancestor process executable base names (parent → PID 1). Unix walks a single `ps` snapshot in memory (no new dependency, works on macOS/BSD/Linux); Windows is a stub (falls back to env-var signals), matching ox's own `internal/proc` approach. Enables detecting orchestrators that spawn agents without setting a marker env var.
+
 ## [0.1.10] - 2026-05-08
 
 ### Added

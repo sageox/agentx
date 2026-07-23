@@ -95,4 +95,5 @@ func RegisterDefaultAgents() {
 	agentx.DefaultRegistry.Register(orchestrators.NewOpenClawAgent())
 	agentx.DefaultRegistry.Register(orchestrators.NewConductorAgent())
 	agentx.DefaultRegistry.Register(orchestrators.NewGasCityAgent())
+	agentx.DefaultRegistry.Register(orchestrators.NewBuzzAgent())
 }

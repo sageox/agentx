@@ -62,6 +62,15 @@ type Environment interface {
 
 	// Stat returns file info.
 	Stat(path string) (os.FileInfo, error)
+
+	// ProcessAncestry returns the executable base names of ancestor processes,
+	// starting from the current process's parent and walking toward PID 1.
+	// It exists so detectors can identify an orchestrator that spawns agents
+	// without setting a marker env var (e.g. Buzz's buzz-acp harness, which is
+	// always an ancestor of the agent it launches). Best-effort: returns an
+	// empty slice, not an error, on platforms or hosts where the process tree
+	// can't be read, so callers can cleanly fall back to env-var signals.
+	ProcessAncestry() ([]string, error)
 }
 
 // SystemEnvironment implements Environment using the real system.
@@ -203,6 +212,11 @@ func (e *SystemEnvironment) Stat(path string) (os.FileInfo, error) {
 	return os.Stat(path)
 }
 
+func (e *SystemEnvironment) ProcessAncestry() ([]string, error) {
+	// Delegates to a build-tagged helper (unix uses `ps`, windows is a stub).
+	return processAncestry()
+}
+
 // MockEnvironment is a test implementation of Environment.
 type MockEnvironment struct {
 	EnvVars       map[string]string
@@ -225,6 +239,8 @@ type MockEnvironment struct {
 	RemoveErrors  map[string]error         // inject remove errors by path
 	DirEntries    map[string][]os.DirEntry // mock ReadDir results
 	StatErrors    map[string]error         // inject stat errors by path
+	Ancestry      []string                 // mock ProcessAncestry result (parent-first)
+	AncestryError error                    // inject a ProcessAncestry error
 }
 
 // NewMockEnvironment creates a mock environment for testing.
@@ -403,4 +419,8 @@ func (e *MockEnvironment) Stat(path string) (os.FileInfo, error) {
 		return nil, nil // exists but no detailed info
 	}
 	return nil, os.ErrNotExist
+}
+
+func (e *MockEnvironment) ProcessAncestry() ([]string, error) {
+	return e.Ancestry, e.AncestryError
 }
