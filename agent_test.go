@@ -31,6 +31,7 @@ func TestSupportedAgents(t *testing.T) {
 		AgentTypeOpenClaw,
 		AgentTypeConductor,
 		AgentTypeGasCity,
+		AgentTypeBuzz,
 	}
 
 	assert.Equal(t, len(expected), len(SupportedAgents), "SupportedAgents count mismatch")
