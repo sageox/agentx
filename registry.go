@@ -93,6 +93,7 @@ var agentEnvAliases = map[string]AgentType{
 	"opencode":    AgentTypeOpenCode,
 	"goose":       AgentTypeGoose,
 	"amp":         AgentTypeAmp,
+	"gemini":      AgentTypeGemini,
 }
 
 func (d *detector) detect(ctx context.Context) (Agent, error) {

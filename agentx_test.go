@@ -79,6 +79,11 @@ func TestDetect_AGENT_ENV(t *testing.T) {
 			wantType: agentx.AgentTypeAmp,
 		},
 		{
+			name:     "gemini via AGENT_ENV",
+			envVars:  map[string]string{"AGENT_ENV": "gemini"},
+			wantType: agentx.AgentTypeGemini,
+		},
+		{
 			name:     "no agent detected",
 			envVars:  map[string]string{},
 			wantType: agentx.AgentTypeUnknown,
@@ -178,6 +183,11 @@ func TestDetect_NativeEnvVars(t *testing.T) {
 			name:     "AMP=1",
 			envVars:  map[string]string{"AMP": "1"},
 			wantType: agentx.AgentTypeAmp,
+		},
+		{
+			name:     "GEMINI_AGENT=1",
+			envVars:  map[string]string{"GEMINI_AGENT": "1"},
+			wantType: agentx.AgentTypeGemini,
 		},
 	}
 
