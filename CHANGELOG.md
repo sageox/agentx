@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.13] - 2026-07-30
+
+### Added
+
+- **`HookEventPostToolUseFailure`**: canonical constant for the failed-tool-call event. Agents that define it (Goose, Cursor) fire `PostToolUse` only on **success**, so without a mapping for the failure event a failed turn is invisible to a consumer until the next successful tool call or `Stop`. Cursor spells it camelCase (`CursorEventPostToolUseFailure`); the canonical constant uses Goose's PascalCase.
+- **Goose `PostToolUseFailure` → `PhaseAfterTool`**: `GooseAgent.EventPhases()` now covers seven events. Goose's four remaining events (`BeforeReadFile`, `AfterFileEdit`, `BeforeShellExecution`, `AfterShellExecution`) stay deliberately unmapped — each is a strict subset of `PreToolUse`/`PostToolUse`, since reading a file and running a shell command are both tool calls, so mapping them would fire a consumer twice per tool call for no additional signal. That reasoning is now recorded on the method.
+
 ## [0.1.12] - 2026-07-30
 
 ### Fixed

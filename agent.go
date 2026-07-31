@@ -427,6 +427,12 @@ const (
 	HookEventStop              HookEvent = "Stop"
 	HookEventSubagentStop      HookEvent = "SubagentStop"
 	HookEventPreCompact        HookEvent = "PreCompact"
+
+	// HookEventPostToolUseFailure fires after a tool call that FAILED. Agents
+	// that define it (Goose, Cursor) fire PostToolUse only on success, so
+	// without this event a failed turn is invisible until the next successful
+	// tool call or Stop. Cursor spells it camelCase — see CursorEventPostToolUseFailure.
+	HookEventPostToolUseFailure HookEvent = "PostToolUseFailure"
 )
 
 // Cursor-specific hook events.
