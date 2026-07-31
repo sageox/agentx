@@ -151,10 +151,15 @@ func (a *GooseAgent) IsInstalled(ctx context.Context, env agentx.Environment) (b
 
 // EventPhases returns Goose's native event-to-phase mapping.
 //
-// Goose follows the Open Plugins hooks specification. It fires several more
-// events than are mapped here (PostToolUseFailure, BeforeReadFile,
-// AfterFileEdit, BeforeShellExecution, AfterShellExecution); those have no
-// canonical phase equivalent and are deliberately omitted.
+// Goose follows the Open Plugins hooks specification. Goose fires PostToolUse
+// only on SUCCESS, so PostToolUseFailure is mapped to the same phase — without
+// it a failed turn stays invisible until the next successful tool call or Stop.
+//
+// The four remaining Goose events (BeforeReadFile, AfterFileEdit,
+// BeforeShellExecution, AfterShellExecution) are deliberately omitted. Each is
+// a strict subset of PreToolUse or PostToolUse — reading a file and running a
+// shell command are both tool calls — so mapping them would fire a consumer
+// twice per tool call for no additional signal.
 //
 // Goose has no compaction event, so PhaseCompact is unreachable — context
 // injected at session start does not survive a Goose compaction.
@@ -162,12 +167,13 @@ func (a *GooseAgent) IsInstalled(ctx context.Context, env agentx.Environment) (b
 // Reference: https://block.github.io/goose/docs/guides/context-engineering/hooks
 func (a *GooseAgent) EventPhases() agentx.EventPhaseMap {
 	return agentx.EventPhaseMap{
-		agentx.HookEventSessionStart:     agentx.PhaseStart,
-		agentx.HookEventSessionEnd:       agentx.PhaseEnd,
-		agentx.HookEventPreToolUse:       agentx.PhaseBeforeTool,
-		agentx.HookEventPostToolUse:      agentx.PhaseAfterTool,
-		agentx.HookEventUserPromptSubmit: agentx.PhasePrompt,
-		agentx.HookEventStop:             agentx.PhaseStop,
+		agentx.HookEventSessionStart:       agentx.PhaseStart,
+		agentx.HookEventSessionEnd:         agentx.PhaseEnd,
+		agentx.HookEventPreToolUse:         agentx.PhaseBeforeTool,
+		agentx.HookEventPostToolUse:        agentx.PhaseAfterTool,
+		agentx.HookEventPostToolUseFailure: agentx.PhaseAfterTool,
+		agentx.HookEventUserPromptSubmit:   agentx.PhasePrompt,
+		agentx.HookEventStop:               agentx.PhaseStop,
 	}
 }
 

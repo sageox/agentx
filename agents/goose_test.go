@@ -43,12 +43,13 @@ func TestGooseEventPhases(t *testing.T) {
 	phases := mapper.EventPhases()
 
 	expected := agentx.EventPhaseMap{
-		agentx.HookEventSessionStart:     agentx.PhaseStart,
-		agentx.HookEventSessionEnd:       agentx.PhaseEnd,
-		agentx.HookEventPreToolUse:       agentx.PhaseBeforeTool,
-		agentx.HookEventPostToolUse:      agentx.PhaseAfterTool,
-		agentx.HookEventUserPromptSubmit: agentx.PhasePrompt,
-		agentx.HookEventStop:             agentx.PhaseStop,
+		agentx.HookEventSessionStart:       agentx.PhaseStart,
+		agentx.HookEventSessionEnd:         agentx.PhaseEnd,
+		agentx.HookEventPreToolUse:         agentx.PhaseBeforeTool,
+		agentx.HookEventPostToolUse:        agentx.PhaseAfterTool,
+		agentx.HookEventPostToolUseFailure: agentx.PhaseAfterTool,
+		agentx.HookEventUserPromptSubmit:   agentx.PhasePrompt,
+		agentx.HookEventStop:               agentx.PhaseStop,
 	}
 	assert.Equal(t, expected, phases)
 

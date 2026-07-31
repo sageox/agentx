@@ -319,7 +319,7 @@ func allAgentSpecs() []agentSpec {
 			},
 			isLifecycleAgent: true,
 			envAliases:       []string{"goose"},
-			eventPhaseCount:  6,
+			eventPhaseCount:  7,
 		},
 		{
 			name:            "Amp",
