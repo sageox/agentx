@@ -44,6 +44,7 @@ func TestAgentSessionSupport(t *testing.T) {
 			{"Kiro", NewKiroAgent()},
 			{"Droid", NewDroidAgent()},
 			{"OpenCode", NewOpenCodeAgent()},
+			{"Goose", NewGooseAgent()},
 		}
 		for _, tt := range agents {
 			t.Run(tt.name, func(t *testing.T) {
@@ -61,7 +62,6 @@ func TestAgentSessionSupport(t *testing.T) {
 			agent agentx.Agent
 		}{
 			{"Aider", NewAiderAgent()},
-			{"Goose", NewGooseAgent()},
 			{"Cody", NewCodyAgent()},
 			{"Continue", NewContinueAgent()},
 			{"CodePuppy", NewCodePuppyAgent()},
