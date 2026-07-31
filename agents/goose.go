@@ -74,9 +74,15 @@ func (a *GooseAgent) ProjectConfigPath() string {
 	return ""
 }
 
-// ContextFiles returns the context/instruction files Goose supports.
+// ContextFiles returns the context/instruction files Goose loads into the
+// system prompt, in Goose's own load order: AGENTS.md first, then .goosehints.
+// Goose resolves both hierarchically from the working directory up to the
+// repository root, and also reads the global ~/.config/goose/.goosehints.
+// The set is overridable via the CONTEXT_FILE_NAMES environment variable.
+//
+// Reference: https://block.github.io/goose/docs/guides/context-engineering/using-goosehints
 func (a *GooseAgent) ContextFiles() []string {
-	return []string{".goose/config.yaml", ".goosehints"}
+	return []string{"AGENTS.md", ".goosehints"}
 }
 
 // SupportsXDGConfig returns true as Goose uses ~/.config/goose.
@@ -87,12 +93,12 @@ func (a *GooseAgent) SupportsXDGConfig() bool {
 // Capabilities returns Goose's supported features.
 func (a *GooseAgent) Capabilities() agentx.Capabilities {
 	return agentx.Capabilities{
-		Hooks:          false, // CLI-based
+		Hooks:          true,  // lifecycle hooks via plugins (goose >= 1.38)
 		MCPServers:     true,  // supports MCP extensions
 		SystemPrompt:   true,  // config.yaml
-		ProjectContext: true,  // .goosehints
-		CustomCommands: false, // TBD
-		MinVersion:     "",
+		ProjectContext: true,  // AGENTS.md, .goosehints
+		CustomCommands: false, // recipes are not slash commands
+		MinVersion:     "1.38.0",
 	}
 }
 
@@ -143,7 +149,38 @@ func (a *GooseAgent) IsInstalled(ctx context.Context, env agentx.Environment) (b
 	return false, nil
 }
 
-func (a *GooseAgent) SupportsSession() bool                 { return false }
+// EventPhases returns Goose's native event-to-phase mapping.
+//
+// Goose follows the Open Plugins hooks specification. It fires several more
+// events than are mapped here (PostToolUseFailure, BeforeReadFile,
+// AfterFileEdit, BeforeShellExecution, AfterShellExecution); those have no
+// canonical phase equivalent and are deliberately omitted.
+//
+// Goose has no compaction event, so PhaseCompact is unreachable — context
+// injected at session start does not survive a Goose compaction.
+//
+// Reference: https://block.github.io/goose/docs/guides/context-engineering/hooks
+func (a *GooseAgent) EventPhases() agentx.EventPhaseMap {
+	return agentx.EventPhaseMap{
+		agentx.HookEventSessionStart:     agentx.PhaseStart,
+		agentx.HookEventSessionEnd:       agentx.PhaseEnd,
+		agentx.HookEventPreToolUse:       agentx.PhaseBeforeTool,
+		agentx.HookEventPostToolUse:      agentx.PhaseAfterTool,
+		agentx.HookEventUserPromptSubmit: agentx.PhasePrompt,
+		agentx.HookEventStop:             agentx.PhaseStop,
+	}
+}
+
+// AgentENVAliases returns the AGENT_ENV values that identify Goose.
+func (a *GooseAgent) AgentENVAliases() []string {
+	return []string{"goose"}
+}
+
+// SupportsSession returns true; Goose supplies a session_id on every hook
+// payload. There is no session-ID environment variable, so SessionID always
+// returns empty and callers must read it from the hook payload instead.
+func (a *GooseAgent) SupportsSession() bool                 { return true }
 func (a *GooseAgent) SessionID(_ agentx.Environment) string { return "" }
 
 var _ agentx.Agent = (*GooseAgent)(nil)
+var _ agentx.LifecycleEventMapper = (*GooseAgent)(nil)

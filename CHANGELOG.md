@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.12] - 2026-07-30
+
+### Fixed
+
+- **Goose lifecycle hooks**: Goose shipped a full hooks system in v1.38 (Open Plugins spec), but `GooseAgent` still reported `Hooks: false` and did not implement `LifecycleEventMapper` — so `AGENT_ENV=goose` was absent from `BuildEventPhaseMap()` and callers had to fall back to scanning every other agent's map to resolve a Goose event. Add `EventPhases()` covering `SessionStart`, `SessionEnd`, `PreToolUse`, `PostToolUse`, `UserPromptSubmit`, and `Stop`, plus `AgentENVAliases() == ["goose"]`. `PhaseCompact` is deliberately unmapped: Goose fires no compaction event, so mapping one would promise a re-prime that never happens.
+- **Goose context files**: `ContextFiles()` returned `[".goose/config.yaml", ".goosehints"]`. `.goose/config.yaml` is configuration, not an instruction file, and the list omitted `AGENTS.md` entirely — which Goose loads *first*, ahead of `.goosehints`. Now returns `["AGENTS.md", ".goosehints"]` in Goose's own load order, so a caller injecting a context marker writes to the file Goose actually reads first.
+- **Goose session support**: `SupportsSession()` was `false`. Goose supplies `session_id` on every hook payload, so it now returns `true`, following the OpenCode precedent. `SessionID(env)` still returns empty — Goose exposes no session-ID environment variable, and callers must read it from the hook payload.
+- **Goose capabilities**: `Hooks: true`, `MinVersion: "1.38.0"` (the release hooks landed in), and the `ProjectContext` comment now names `AGENTS.md` alongside `.goosehints`.
+
 ## [0.1.11] - 2026-07-23
 
 ### Added
