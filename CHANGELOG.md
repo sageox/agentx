@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.14] - 2026-08-17
+
+### Added
+
+- **OMP / Oh My Pi detection** (`AgentTypeOMP`): first-class support for [Oh My Pi](https://github.com/can1357/oh-my-pi), a fork of Pi that installs under `~/.omp` and ships an `omp` binary. `OMPAgent` detects via its own binary in the exec path and `AGENT_ENV=omp` / `oh-my-pi`, resolves config at `~/.omp` (project `.omp`), reads `AGENTS.md`/`CLAUDE.md`/`SYSTEM.md`, and is registered in the default registry.
+- **OMP/Pi mutual exclusion**: OMP inherits Pi's `PI_CODING_AGENT` runtime marker from the shared `cli.ts` ancestry, so the two runtime detectors are made mutually exclusive by construction — `PiAgent.DetectRuntime` now yields when the launching binary is `omp`. The registry stores agents in a map with no ordering guarantee, so relying on registration order to break the tie would be nondeterministic. Detection is best-effort for a node-launched OMP process that only exports the inherited `PI_CODING_AGENT`; `AGENT_ENV=omp` (which the ox integration always sets) or `DetectByType` is authoritative there.
+
 ## [0.1.13] - 2026-07-30
 
 ### Added

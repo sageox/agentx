@@ -85,6 +85,11 @@ func RegisterDefaultAgents() {
 	droid.SetRulesManager(rules.NewDroidRulesManager())
 	agentx.DefaultRegistry.Register(droid)
 
+	// OMP / Oh My Pi (github.com/can1357/oh-my-pi) — a Pi fork. Its runtime
+	// detector is mutually exclusive with Pi's (see OMPAgent/PiAgent
+	// DetectRuntime), so registration order does not affect detection.
+	agentx.DefaultRegistry.Register(agents.NewOMPAgent())
+
 	// Pi (shittycodingagent.ai)
 	agentx.DefaultRegistry.Register(agents.NewPiAgent())
 

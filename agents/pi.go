@@ -68,6 +68,15 @@ func (a *PiAgent) Detect(ctx context.Context, env agentx.Environment) (bool, err
 // no AGENT_ENV consultation. See RuntimeDetector in agentx for the
 // two-phase priority this enables (#527).
 func (a *PiAgent) DetectRuntime(_ context.Context, env agentx.Environment) (bool, error) {
+	// The Oh My Pi fork (OMPAgent) ships an `omp` binary and inherits Pi's
+	// PI_CODING_AGENT marker from the shared cli.ts. When the launching binary
+	// is unmistakably omp, yield to OMP: the registry is a map with no ordering
+	// guarantee, so if both forks' runtime detectors fired the winner would be
+	// nondeterministic. This keeps the two mutually exclusive by construction.
+	if execPath := strings.ToLower(env.GetEnv("_")); strings.Contains(execPath, "oh-my-pi") || filepath.Base(execPath) == "omp" {
+		return false, nil
+	}
+
 	// pi-mono cli.ts sets process.env.PI_CODING_AGENT="true" at startup; Node's
 	// child_process inherits process.env, so this propagates to every subprocess
 	// pi spawns (including the bash tool). Cheapest and most reliable signal.

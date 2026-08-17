@@ -28,6 +28,10 @@ func TestPiDetect(t *testing.T) {
 		{"exec path heuristic", map[string]string{"_": "/usr/local/bin/pi-coding-agent"}, true},
 		{"exec path heuristic npm global", map[string]string{"_": "/home/user/.npm/bin/pi-coding-agent"}, true},
 		{"bare pi binary should not match", map[string]string{"_": "/usr/local/bin/pi"}, false},
+		// Pi yields to the Oh My Pi fork when the launcher is omp, even though
+		// OMP inherits PI_CODING_AGENT from the shared cli.ts (see OMPAgent).
+		{"omp launcher yields to OMP", map[string]string{"_": "/usr/local/bin/omp", "PI_CODING_AGENT": "true"}, false},
+		{"oh-my-pi launcher yields to OMP", map[string]string{"_": "/usr/local/bin/oh-my-pi", "PI_CODING_AGENT": "1"}, false},
 		{"no env vars", map[string]string{}, false},
 		{"unrelated env", map[string]string{"CURSOR_AGENT": "1"}, false},
 	}

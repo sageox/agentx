@@ -27,6 +27,7 @@ func TestSupportedAgents(t *testing.T) {
 		AgentTypeCline,
 		AgentTypeDroid,
 		AgentTypePi,
+		AgentTypeOMP,
 		AgentTypeGemini,
 		AgentTypeOpenClaw,
 		AgentTypeConductor,
@@ -69,6 +70,7 @@ func TestAgentTypeConstants(t *testing.T) {
 		{AgentTypeAmp, "amp"},
 		{AgentTypeCline, "cline"},
 		{AgentTypeDroid, "droid"},
+		{AgentTypeOMP, "omp"},
 		{AgentTypeOpenClaw, "openclaw"},
 		{AgentTypeConductor, "conductor"},
 	}
