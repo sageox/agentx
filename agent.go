@@ -124,6 +124,7 @@ const (
 	AgentTypeCline      AgentType = "cline"
 	AgentTypeDroid      AgentType = "droid"
 	AgentTypePi         AgentType = "pi"
+	AgentTypeOMP        AgentType = "omp"
 	AgentTypeGemini     AgentType = "gemini"
 	AgentTypeCustom     AgentType = "custom"
 
@@ -154,6 +155,7 @@ var SupportedAgents = []AgentType{
 	AgentTypeCline,
 	AgentTypeDroid,
 	AgentTypePi,
+	AgentTypeOMP,
 	AgentTypeGemini,
 
 	// Orchestrators

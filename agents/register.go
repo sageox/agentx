@@ -20,6 +20,10 @@ func init() {
 	r.Register(NewOpenCodeAgent())
 	r.Register(NewGooseAgent())
 	r.Register(NewAmpAgent())
+	// OMP (Oh My Pi) and Pi share transcript ancestry; their runtime detectors
+	// are mutually exclusive (see OMPAgent/PiAgent DetectRuntime), so the
+	// map-ordered registry never has to break a tie between them.
+	r.Register(NewOMPAgent())
 	r.Register(NewPiAgent())
 	r.Register(NewCodexAgent())
 	r.Register(NewGeminiAgent())
