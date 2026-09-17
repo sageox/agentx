@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-09-17
+
+### Added
+
+- **`skills` package — where every agent discovers Agent Skills, and how to validate one.** Agent Skills stopped being a Claude Code feature: the format was released as an open standard in December 2025 and is now stewarded by the Agentic AI Foundation at [agentskills.io](https://agentskills.io/), with ~45 client products. agentx modeled rules, commands, hooks and sessions but had no concept of skills at all, so a consumer installing skills had to hand-maintain each vendor's directory layout — and quietly install nothing for the agents it had not gotten to.
+- **`skills.RootsFor(agent, scope)`** returns a `Roots{Write, Read}` for 12 agents at project and personal scope. `Write` is the single directory to install into; `Read` lists every directory that agent discovers from, `Write` first. **Callers must write to `Write` only.** The ecosystem converged on `.agents/skills`, so a skill installed once is found by nearly every agent; fanning one copy across each vendor's native directory would put the same skill on disk several times, to drift apart and disagree later.
+- **Two holdouts are modeled explicitly**: Claude Code reads only `.claude/skills` ([upstream request](https://github.com/anthropics/claude-code/issues/56193)) and Kiro only `.kiro/skills`. Both get their native directory as `Write`; a test names them, so an agent gaining canonical support upstream surfaces as a failing test rather than as a permanently duplicated install.
+- **`skills.ParseManifest` / `Manifest.Validate`** implement the SKILL.md format: `name` (≤64 chars, lowercase alphanumeric and hyphens, no leading/trailing or consecutive hyphen, must match the skill's directory name), `description` (≤1024), and the optional `license`, `compatibility` (≤500), `metadata`, and experimental `allowed-tools`. Validation reports every violation in one pass rather than the first, and unknown frontmatter keys are ignored rather than rejected so a skill valid for a newer agent is not turned away.
+- **`TestEveryRegisteredAgentIsClassified`** ties the table back to the registry: an agent added to `SupportedAgents` fails the suite until somebody records where its skills go, or records in `deliberatelyUnsupported` that it has none. agentx had no such invariant for any capability table, which is how per-agent coverage drifted behind the agent list elsewhere in the library.
+
+### Notes
+
+- **No `SkillsManager`, and no `Capabilities.Skills` flag.** Skills are directory bundles, and consumers that install them already own digest tracking, retirement and conflict handling for their whole inventory; a second installer here would be a parallel mechanism drifting from the first. `RootsFor` returning `ok == false` is the capability answer, which avoids touching every agent implementation to add a boolean that carries no information the table does not.
+- `gopkg.in/yaml.v3` is promoted from an indirect to a direct dependency. It was already in the module graph via testify, so no new module is downloaded.
+
 ## [0.1.14] - 2026-08-17
 
 ### Added
