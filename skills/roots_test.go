@@ -163,3 +163,21 @@ func indexOf(list []agentx.AgentType, want agentx.AgentType) int {
 	}
 	return -1
 }
+
+// TestRootsForReturnsAnIsolatedCopy: the table is package state shared by every
+// caller. Handing out its backing array lets one consumer that sorts or appends
+// to its result silently rewrite the discovery roots every later consumer sees.
+func TestRootsForReturnsAnIsolatedCopy(t *testing.T) {
+	before, ok := RootsFor(agentx.AgentTypeCursor, ScopeProject)
+	require.True(t, ok)
+	require.Greater(t, len(before.Read), 1)
+	original := append([]string(nil), before.Read...)
+
+	mutable, _ := RootsFor(agentx.AgentTypeCursor, ScopeProject)
+	for i := range mutable.Read {
+		mutable.Read[i] = "/tmp/hijacked"
+	}
+
+	after, _ := RootsFor(agentx.AgentTypeCursor, ScopeProject)
+	assert.Equal(t, original, after.Read, "a caller mutating its result must not change the shared table")
+}

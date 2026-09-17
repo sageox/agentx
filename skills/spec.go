@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"unicode/utf8"
 
 	"gopkg.in/yaml.v3"
 )
@@ -13,6 +14,11 @@ const ManifestName = "SKILL.md"
 
 // Spec field limits, from the Agent Skills specification
 // (https://agentskills.io/specification).
+//
+// These are CHARACTER limits, not byte limits, and are enforced with
+// utf8.RuneCountInString. Measuring bytes would reject a description of 1024 é
+// at twice its true length — every non-ASCII manifest penalized for its
+// alphabet.
 const (
 	MaxNameLen          = 64
 	MaxDescriptionLen   = 1024
@@ -73,8 +79,8 @@ func (m Manifest) Validate(dirName string) error {
 	switch {
 	case m.Name == "":
 		problems = append(problems, "name is required")
-	case len(m.Name) > MaxNameLen:
-		problems = append(problems, fmt.Sprintf("name is %d characters, limit is %d", len(m.Name), MaxNameLen))
+	case utf8.RuneCountInString(m.Name) > MaxNameLen:
+		problems = append(problems, fmt.Sprintf("name is %d characters, limit is %d", utf8.RuneCountInString(m.Name), MaxNameLen))
 	}
 	if m.Name != "" {
 		if bad := invalidNameReason(m.Name); bad != "" {
@@ -88,12 +94,12 @@ func (m Manifest) Validate(dirName string) error {
 	switch {
 	case strings.TrimSpace(m.Description) == "":
 		problems = append(problems, "description is required")
-	case len(m.Description) > MaxDescriptionLen:
-		problems = append(problems, fmt.Sprintf("description is %d characters, limit is %d", len(m.Description), MaxDescriptionLen))
+	case utf8.RuneCountInString(m.Description) > MaxDescriptionLen:
+		problems = append(problems, fmt.Sprintf("description is %d characters, limit is %d", utf8.RuneCountInString(m.Description), MaxDescriptionLen))
 	}
 
-	if len(m.Compatibility) > MaxCompatibilityLen {
-		problems = append(problems, fmt.Sprintf("compatibility is %d characters, limit is %d", len(m.Compatibility), MaxCompatibilityLen))
+	if n := utf8.RuneCountInString(m.Compatibility); n > MaxCompatibilityLen {
+		problems = append(problems, fmt.Sprintf("compatibility is %d characters, limit is %d", n, MaxCompatibilityLen))
 	}
 
 	if len(problems) == 0 {
@@ -127,17 +133,32 @@ func invalidNameReason(name string) string {
 // The opening fence must be the very first line: a --- appearing later in a
 // document is a horizontal rule, and treating it as frontmatter would parse a
 // skill's prose as metadata.
+//
+// The closing fence must be a line of exactly ---. Accepting any line that
+// merely STARTS with --- would close the block on ---- or on a --- that begins a
+// sentence, silently truncating the metadata and handing back a manifest that a
+// conforming consumer rejects.
 func frontmatter(data []byte) ([]byte, bool) {
 	text := strings.ReplaceAll(string(data), "\r\n", "\n")
 	if !strings.HasPrefix(text, "---\n") {
 		return nil, false
 	}
-	rest := text[len("---\n"):]
-	end := strings.Index(rest, "\n---")
-	if end < 0 {
-		// Unterminated frontmatter. Reported as absent rather than silently
-		// treating the whole document as metadata.
-		return nil, false
+	body := text[len("---\n"):]
+	for offset := 0; offset <= len(body); {
+		line := body[offset:]
+		end := strings.IndexByte(line, '\n')
+		if end >= 0 {
+			line = line[:end]
+		}
+		if line == "---" {
+			return []byte(body[:offset]), true
+		}
+		if end < 0 {
+			break
+		}
+		offset += end + 1
 	}
-	return []byte(rest[:end]), true
+	// Unterminated frontmatter. Reported as absent rather than silently treating
+	// the whole document as metadata.
+	return nil, false
 }

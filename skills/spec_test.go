@@ -126,3 +126,60 @@ func TestManifestValidate(t *testing.T) {
 		assert.NoError(t, Manifest{Name: strings.Repeat("a", MaxNameLen), Description: "d"}.Validate(""))
 	})
 }
+
+// TestLimitsCountCharactersNotBytes guards the spec's wording: the limits are
+// character limits. Measuring len() would reject a description of exactly 1024
+// accented characters at twice its true length, penalizing every manifest not
+// written in ASCII.
+func TestLimitsCountCharactersNotBytes(t *testing.T) {
+	atLimit := Manifest{
+		Name:          strings.Repeat("a", MaxNameLen),
+		Description:   strings.Repeat("é", MaxDescriptionLen),
+		Compatibility: strings.Repeat("é", MaxCompatibilityLen),
+	}
+	require.Greater(t, len(atLimit.Description), MaxDescriptionLen, "test needs multi-byte runes to be meaningful")
+	assert.NoError(t, atLimit.Validate(""))
+
+	overByOne := Manifest{Name: "x", Description: strings.Repeat("é", MaxDescriptionLen+1)}
+	require.Error(t, overByOne.Validate(""))
+	assert.Contains(t, overByOne.Validate("").Error(), "description is 1025 characters")
+}
+
+// TestClosingFenceMustBeExact: a line that merely starts with --- is not a
+// closing fence. Accepting one truncates the metadata at an arbitrary point and
+// yields a manifest a conforming consumer rejects — while this parser reports
+// success.
+func TestClosingFenceMustBeExact(t *testing.T) {
+	notFences := map[string]string{
+		"four hyphens":        "---\nname: x\ndescription: d\n----\n",
+		"hyphens plus text":   "---\nname: x\ndescription: d\n---bad\n",
+		"indented fence":      "---\nname: x\ndescription: d\n  ---\n",
+		"fence with trailing": "---\nname: x\ndescription: d\n--- \n",
+	}
+	for name, doc := range notFences {
+		t.Run(name, func(t *testing.T) {
+			_, err := ParseManifest([]byte(doc))
+			assert.ErrorIs(t, err, ErrNoFrontmatter)
+		})
+	}
+
+	t.Run("exact fence closes the block", func(t *testing.T) {
+		m, err := ParseManifest([]byte("---\nname: x\ndescription: d\n---\nBody.\n"))
+		require.NoError(t, err)
+		assert.Equal(t, "x", m.Name)
+	})
+
+	// A --- inside the body must not be mistaken for the fence a second time, and
+	// a file whose final line is the fence with no trailing newline still parses.
+	t.Run("fence as the final line without a trailing newline", func(t *testing.T) {
+		m, err := ParseManifest([]byte("---\nname: x\ndescription: d\n---"))
+		require.NoError(t, err)
+		assert.Equal(t, "x", m.Name)
+	})
+
+	t.Run("empty frontmatter parses but fails validation", func(t *testing.T) {
+		m, err := ParseManifest([]byte("---\n---\nBody.\n"))
+		require.NoError(t, err)
+		assert.ErrorContains(t, m.Validate(""), "name is required")
+	})
+}

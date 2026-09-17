@@ -334,7 +334,10 @@ env.PathBinaries = map[string]string{"claude": "/usr/bin/claude"}
 Where each agent discovers [Agent Skills](https://agentskills.io/), and how to validate a `SKILL.md`.
 
 ```go
-import "github.com/sageox/agentx/skills"
+import (
+	"github.com/sageox/agentx"
+	"github.com/sageox/agentx/skills"
+)
 
 roots, ok := skills.RootsFor(agentx.AgentTypeCursor, skills.ScopeProject)
 // roots.Write == ".agents/skills"

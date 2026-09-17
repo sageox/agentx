@@ -22,7 +22,11 @@
 // or noticing a copy left behind by an older layout. Never write to it.
 package skills
 
-import "github.com/sageox/agentx"
+import (
+	"slices"
+
+	"github.com/sageox/agentx"
+)
 
 // Scope distinguishes a skill installed for one project from one installed for
 // the user across every project.
@@ -129,6 +133,11 @@ func RootsFor(agent agentx.AgentType, scope Scope) (roots Roots, ok bool) {
 		return Roots{}, false
 	}
 	roots, ok = byScope[scope]
+	// Read is cloned because the table it comes from is package state shared by
+	// every caller. Handing out the backing array lets one consumer that sorts or
+	// appends to its result silently rewrite the discovery roots every later
+	// consumer sees.
+	roots.Read = slices.Clone(roots.Read)
 	return roots, ok
 }
 
