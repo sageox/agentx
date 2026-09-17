@@ -329,6 +329,42 @@ env.ExistingDirs = map[string]bool{"/home/testuser/.claude": true}
 env.PathBinaries = map[string]string{"claude": "/usr/bin/claude"}
 ```
 
+## Agent Skills
+
+Where each agent discovers [Agent Skills](https://agentskills.io/), and how to validate a `SKILL.md`.
+
+```go
+import (
+	"github.com/sageox/agentx"
+	"github.com/sageox/agentx/skills"
+)
+
+roots, ok := skills.RootsFor(agentx.AgentTypeCursor, skills.ScopeProject)
+// roots.Write == ".agents/skills"
+// roots.Read  == [".agents/skills", ".cursor/skills", ".claude/skills", ".codex/skills"]
+```
+
+**Write to `roots.Write` only.** The ecosystem converged on `.agents/skills`, so a skill
+installed once is found by nearly every agent. `Read` is for discovery and cleanup — copying a
+skill into each vendor's native directory puts the same file on disk several times, to drift
+apart and disagree later.
+
+Two agents don't read the shared root and get their native directory instead:
+
+| Agent | Project | Personal |
+|---|---|---|
+| Claude Code | `.claude/skills` | `~/.claude/skills` |
+| Kiro | `.kiro/skills` | `~/.kiro/skills` |
+| *everything else* | `.agents/skills` | `~/.agents/skills` |
+
+`ok == false` means the agent has no Agent Skills support — install nothing rather than
+guessing a directory.
+
+```go
+m, err := skills.ParseManifest(data)   // SKILL.md frontmatter
+err = m.Validate(dirName)              // every spec violation, in one pass
+```
+
 ## Package Structure
 
 Single package - just import and use:
