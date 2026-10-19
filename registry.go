@@ -3,6 +3,8 @@ package agentx
 import (
 	"context"
 	"fmt"
+	"sort"
+	"strings"
 	"sync"
 )
 
@@ -42,6 +44,9 @@ func (r *registry) Get(agentType AgentType) (Agent, bool) {
 	return agent, ok
 }
 
+// List returns the registered agents sorted by type. Detection takes the
+// first agent that matches, so walking the map directly made the winner
+// random whenever two agents matched (sageox/agentx#17).
 func (r *registry) List() []Agent {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -50,6 +55,7 @@ func (r *registry) List() []Agent {
 	for _, agent := range r.agents {
 		agents = append(agents, agent)
 	}
+	sort.Slice(agents, func(i, j int) bool { return agents[i].Type() < agents[j].Type() })
 	return agents
 }
 
@@ -100,23 +106,30 @@ func (d *detector) DetectOrchestrator(ctx context.Context) (Agent, error) {
 
 // detectByRole finds the first detected agent matching the given role.
 //
-// Two-phase priority:
+// Four phases, strongest evidence first; within a phase agents are tried in
+// List() order, so the result never depends on map iteration:
 //  1. Runtime signals (authoritative). Agents that implement RuntimeDetector
 //     are asked whether any of their non-AGENT_ENV evidence is present
 //     (CLAUDECODE=1, CLAUDE_CODE_ENTRYPOINT, PI_CODING_AGENT_DIR, etc.).
 //     The first match wins regardless of what AGENT_ENV says.
-//  2. AGENT_ENV fallback. If no runtime signal claimed the process, fall
-//     back to the existing Detect() which also honors AGENT_ENV=<alias>.
+//  2. An explicit AGENT_ENV naming a registered agent, by type or alias.
+//  3. Venue signals (VenueDetector): the host belongs to an agent, such as
+//     an Amp orb.
+//  4. Everything else Detect() reports, including filesystem hints like a
+//     checked-in .codex/ directory.
 //
-// This resolves the #527 class of bug: a Claude Code session where a stray
-// CLAUDE.md instruction sets AGENT_ENV=pi no longer silently mis-routes
-// through the Pi adapter. Runtime signals (CLAUDECODE=1) outrank the
-// caller-provided override.
+// Phase 1 before 2 resolves the #527 class of bug: a Claude Code session
+// where a stray CLAUDE.md instruction sets AGENT_ENV=pi no longer silently
+// mis-routes through the Pi adapter. Phases 2 and 3 before 4 resolve
+// sageox/agentx#17: inside an Amp orb, a repository's .codex/ directory
+// made Codex win, so the orb's sessions were never recorded as Amp's.
 func (d *detector) detectByRole(ctx context.Context, role AgentRole) (Agent, error) {
 	env := d.getEnv()
+	agents := d.registry.List()
+	agentEnv := strings.ToLower(strings.TrimSpace(env.GetEnv("AGENT_ENV")))
 
 	// Phase 1: runtime signals only
-	for _, agent := range d.registry.List() {
+	for _, agent := range agents {
 		if agent.Role() != role {
 			continue
 		}
@@ -124,30 +137,65 @@ func (d *detector) detectByRole(ctx context.Context, role AgentRole) (Agent, err
 		if !ok {
 			continue
 		}
-		detected, err := rd.DetectRuntime(ctx, env)
-		if err != nil {
-			continue
-		}
-		if detected {
+		if detected, err := rd.DetectRuntime(ctx, env); err == nil && detected {
 			return agent, nil
 		}
 	}
 
-	// Phase 2: fallback to AGENT_ENV-inclusive Detect
-	for _, agent := range d.registry.List() {
+	// Phase 2: an explicit AGENT_ENV
+	if agentEnv != "" {
+		for _, agent := range agents {
+			if agent.Role() == role && namedByAgentENV(agent, agentEnv) {
+				return agent, nil
+			}
+		}
+	}
+
+	// Phase 3: venue signals
+	for _, agent := range agents {
 		if agent.Role() != role {
 			continue
 		}
-		detected, err := agent.Detect(ctx, env)
-		if err != nil {
+		vd, ok := agent.(VenueDetector)
+		if !ok {
 			continue
 		}
-		if detected {
+		if detected, err := vd.DetectVenue(ctx, env); err == nil && detected {
+			return agent, nil
+		}
+	}
+
+	// Phase 4: fallback to AGENT_ENV-inclusive Detect, filesystem hints included
+	for _, agent := range agents {
+		if agent.Role() != role {
+			continue
+		}
+		if detected, err := agent.Detect(ctx, env); err == nil && detected {
 			return agent, nil
 		}
 	}
 
 	return nil, nil
+}
+
+// namedByAgentENV reports whether a lowercased, trimmed AGENT_ENV names
+// agent: its type, or one of its aliases when it maps lifecycle events.
+// The type counts too because some agents (Codex) declare no aliases and
+// match AGENT_ENV against their type inside Detect.
+func namedByAgentENV(agent Agent, agentEnv string) bool {
+	if strings.ToLower(string(agent.Type())) == agentEnv {
+		return true
+	}
+	mapper, ok := agent.(LifecycleEventMapper)
+	if !ok {
+		return false
+	}
+	for _, alias := range mapper.AgentENVAliases() {
+		if strings.ToLower(alias) == agentEnv {
+			return true
+		}
+	}
+	return false
 }
 
 // DetectAll returns all detected agents and orchestrators regardless of role.

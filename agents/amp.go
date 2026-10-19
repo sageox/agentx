@@ -36,8 +36,9 @@ func (a *AmpAgent) Role() agentx.AgentRole { return agentx.RoleAgent }
 //
 // Detection methods:
 //   - AMP_AGENT=1 or AMP=1
-//   - AMP_THREAD_URL is set (present in all Amp sessions)
+//   - AMP_THREAD_URL is set
 //   - AGENT_ENV=amp
+//   - AMP_ORB is set (inside an Amp orb)
 func (a *AmpAgent) Detect(ctx context.Context, env agentx.Environment) (bool, error) {
 	if ok, _ := a.DetectRuntime(ctx, env); ok {
 		return true, nil
@@ -48,7 +49,19 @@ func (a *AmpAgent) Detect(ctx context.Context, env agentx.Environment) (bool, er
 		return true, nil
 	}
 
+	if ok, _ := a.DetectVenue(ctx, env); ok {
+		return true, nil
+	}
+
 	return false, nil
+}
+
+// DetectVenue reports an Amp orb. Amp sets AMP_ORB for every process in
+// an orb. An orb's agent shell was seen with AMP_ORB=1 and none of the
+// runtime variables DetectRuntime checks, so without this an orb session
+// was never recognised as Amp's (sageox/agentx#17).
+func (a *AmpAgent) DetectVenue(_ context.Context, env agentx.Environment) (bool, error) {
+	return env.GetEnv("AMP_ORB") != "", nil
 }
 
 // DetectRuntime reports Amp presence from runtime signals only —

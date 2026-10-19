@@ -23,6 +23,7 @@ func TestAmpDetect(t *testing.T) {
 		{"AMP_AGENT=1", map[string]string{"AMP_AGENT": "1"}, true},
 		{"AMP_THREAD_URL set", map[string]string{"AMP_THREAD_URL": "https://ampcode.com/threads/abc123"}, true},
 		{"AGENT_ENV=amp", map[string]string{"AGENT_ENV": "amp"}, true},
+		{"AMP_ORB=1 (inside an orb)", map[string]string{"AMP_ORB": "1"}, true},
 		{"no env vars", map[string]string{}, false},
 		{"unrelated env", map[string]string{"CURSOR_AGENT": "1"}, false},
 	}
@@ -33,6 +34,39 @@ func TestAmpDetect(t *testing.T) {
 			detected, err := agent.Detect(ctx, env)
 			require.NoError(t, err)
 			assert.Equal(t, tt.expected, detected)
+		})
+	}
+}
+
+// AMP_ORB marks the whole orb, so it must stay out of DetectRuntime: a
+// runtime match outranks every other agent's, and Claude Code run inside
+// an orb would otherwise be reported as Amp (sageox/agentx#17).
+func TestAmpOrbIsAVenueSignalNotARuntimeSignal(t *testing.T) {
+	ctx := context.Background()
+	agent := NewAmpAgent()
+
+	tests := []struct {
+		name        string
+		envVars     map[string]string
+		wantRuntime bool
+		wantVenue   bool
+	}{
+		{"orb only", map[string]string{"AMP_ORB": "1"}, false, true},
+		{"orb with thread URL", map[string]string{"AMP_ORB": "1", "AMP_THREAD_URL": "https://ampcode.com/threads/T-1"}, true, true},
+		{"thread URL only (laptop)", map[string]string{"AMP_THREAD_URL": "https://ampcode.com/threads/T-1"}, true, false},
+		{"empty AMP_ORB", map[string]string{"AMP_ORB": ""}, false, false},
+		{"AGENT_ENV=amp is neither", map[string]string{"AGENT_ENV": "amp"}, false, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			env := agentx.NewMockEnvironment(tt.envVars)
+			runtime, err := agent.DetectRuntime(ctx, env)
+			require.NoError(t, err)
+			assert.Equal(t, tt.wantRuntime, runtime, "DetectRuntime")
+			venue, err := agent.DetectVenue(ctx, env)
+			require.NoError(t, err)
+			assert.Equal(t, tt.wantVenue, venue, "DetectVenue")
 		})
 	}
 }

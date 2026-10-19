@@ -226,6 +226,21 @@ type RuntimeDetector interface {
 	DetectRuntime(ctx context.Context, env Environment) (bool, error)
 }
 
+// VenueDetector is an optional extension for agents that host a whole
+// machine, so their marker reaches every process on it, not just the
+// agent's own. An Amp orb sets AMP_ORB for its entire sandbox.
+//
+// A venue signal is weaker evidence than a runtime signal (another agent,
+// such as Claude Code, can run inside the venue) or an explicit AGENT_ENV,
+// and stronger than a filesystem hint such as a checked-in .codex/
+// directory. The Detector consults it between those phases
+// (sageox/agentx#17).
+type VenueDetector interface {
+	// DetectVenue reports whether the process runs on a host this agent
+	// provides. Implementations MUST NOT consult AGENT_ENV.
+	DetectVenue(ctx context.Context, env Environment) (bool, error)
+}
+
 // AgentConfig provides configuration path information.
 // Use this interface when you need to locate agent configuration files.
 type AgentConfig interface {
