@@ -3,6 +3,7 @@ package agents
 import (
 	"context"
 	"path/filepath"
+	"strings"
 
 	"github.com/sageox/agentx"
 )
@@ -73,8 +74,10 @@ func (a *AmpAgent) DetectRuntime(_ context.Context, env agentx.Environment) (boo
 		return true, nil
 	}
 
-	// AMP_THREAD_URL is set by Amp in all sessions
-	if env.GetEnv("AMP_THREAD_URL") != "" {
+	// The thread's own variables are per-agent evidence. Amp exports
+	// AMP_THREAD_URL on a laptop; an orb's agent shell has AMP_THREAD_ID
+	// instead (sageox/agentx#17).
+	if env.GetEnv("AMP_THREAD_URL") != "" || env.GetEnv("AMP_THREAD_ID") != "" {
 		return true, nil
 	}
 
@@ -179,8 +182,26 @@ func (a *AmpAgent) AgentENVAliases() []string {
 }
 
 func (a *AmpAgent) SupportsSession() bool { return true }
+
+// SessionID returns the thread URL that recordings of this thread are keyed
+// by. An orb's agent shell has no AMP_THREAD_URL, only AMP_THREAD_ID and
+// AMP_URL (sageox/agentx#17), so the URL is rebuilt from those in the shape
+// the ox-bridge plugin sends at session end, <AMP_URL>/threads/<id>.
+// Without it an orb recording has no thread to match and never uploads.
 func (a *AmpAgent) SessionID(env agentx.Environment) string {
-	return env.GetEnv("AMP_THREAD_URL")
+	if threadURL := env.GetEnv("AMP_THREAD_URL"); threadURL != "" {
+		return threadURL
+	}
+	threadID := strings.TrimSpace(env.GetEnv("AMP_THREAD_ID"))
+	// a thread id is one URL path segment; anything else isn't one we can use
+	if threadID == "" || strings.ContainsAny(threadID, "/?# ") {
+		return ""
+	}
+	base := strings.TrimRight(strings.TrimSpace(env.GetEnv("AMP_URL")), "/")
+	if base == "" {
+		base = "https://ampcode.com"
+	}
+	return base + "/threads/" + threadID
 }
 
 var _ agentx.Agent = (*AmpAgent)(nil)

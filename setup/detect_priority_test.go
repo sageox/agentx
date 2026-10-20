@@ -28,6 +28,7 @@ func TestDetect_PriorityAcrossRealAgents(t *testing.T) {
 		want agentx.AgentType
 	}{
 		{"Amp orb shell in a repo with .codex/", map[string]string{"AMP_ORB": "1"}, codexDir, agentx.AgentTypeAmp},
+		{"real orb agent shell (thread id, no URL)", map[string]string{"AMP_ORB": "1", "AMP_THREAD_ID": "T-1", "AMP_URL": "https://ampcode.com"}, codexDir, agentx.AgentTypeAmp},
 		{"Amp orb shell, nothing else", map[string]string{"AMP_ORB": "1"}, nil, agentx.AgentTypeAmp},
 		{"Claude Code running inside an orb", map[string]string{"AMP_ORB": "1", "CLAUDECODE": "1"}, nil, agentx.AgentTypeClaudeCode},
 		{"AGENT_ENV=codex inside an orb", map[string]string{"AMP_ORB": "1", "AGENT_ENV": "codex"}, nil, agentx.AgentTypeCodex},
