@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.1.15] - 2026-09-17
+## [0.1.15] - 2026-10-20
 
 ### Added
 
@@ -14,6 +14,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Two holdouts are modeled explicitly**: Claude Code reads only `.claude/skills` ([upstream request](https://github.com/anthropics/claude-code/issues/56193)) and Kiro only `.kiro/skills`. Both get their native directory as `Write`; a test names them, so an agent gaining canonical support upstream surfaces as a failing test rather than as a permanently duplicated install.
 - **`skills.ParseManifest` / `Manifest.Validate`** implement the SKILL.md format: `name` (≤64 chars, lowercase alphanumeric and hyphens, no leading/trailing or consecutive hyphen, must match the skill's directory name), `description` (≤1024), and the optional `license`, `compatibility` (≤500), `metadata`, and experimental `allowed-tools`. Validation reports every violation in one pass rather than the first, and unknown frontmatter keys are ignored rather than rejected so a skill valid for a newer agent is not turned away.
 - **`TestEveryRegisteredAgentIsClassified`** ties the table back to the registry: an agent added to `SupportedAgents` fails the suite until somebody records where its skills go, or records in `deliberatelyUnsupported` that it has none. agentx had no such invariant for any capability table, which is how per-agent coverage drifted behind the agent list elsewhere in the library.
+- **Amp orbs are detected as Amp** ([#17](https://github.com/sageox/agentx/issues/17), [#18](https://github.com/sageox/agentx/pull/18)). An orb's agent shell sets `AMP_ORB` and `AMP_THREAD_ID` but not `AMP_THREAD_URL`, so Amp was never detected there, and a checked-in `.codex/` made Codex win instead. The new optional **`VenueDetector`** interface marks a host that belongs to an agent; Amp implements it for both variables. Venue signals rank below an agent's runtime signals, so Claude Code run inside an orb is still Claude Code.
+- **`AmpAgent.SessionID` rebuilds the thread URL** as `<AMP_URL>/threads/<AMP_THREAD_ID>` (default host `https://ampcode.com`) when `AMP_THREAD_URL` is unset. A thread id that isn't a single URL path segment returns an empty session ID.
+- **Code Puppy declares `AgentENVAliases()`** (`code-puppy`, `codepuppy`). Its `Detect` already accepted `codepuppy`, which is not its type.
+
+### Changed
+
+- **Detection order is deterministic.** `Registry.List()` is sorted by type, and `Detect` walks five phases, strongest evidence first: runtime signals, an explicit `AGENT_ENV` (type or alias), the own markers of agents without `DetectRuntime`, venue signals, then everything else, including folder hints such as `.codex/`. Before this, a tie inside a phase was broken by Go map order and could change from run to run.
+- **Visible effects:** an explicit `AGENT_ENV` now beats a folder hint every time, where it was random before. When two agents' runtime signals are both present (one agent run inside another), the first by type name wins every time: Claude Code inside an Amp laptop thread reports as Amp, and Codex inside Claude Code reports as Claude Code. Choosing the innermost agent needs process ancestry and is not done yet.
+
+### Fixed
+
+- **`AGENT_ENV` aliases count even for agents that map no lifecycle events.** The explicit-`AGENT_ENV` phase reads `AgentENVAliases()` on its own, so `AGENT_ENV=oh-my-pi` names OMP even though OMP has no `EventPhases`.
+- **Agents without `DetectRuntime` (Goose, Cursor, Copilot, Cline, …) win on their own marker** (`GOOSE=1`, `CURSOR_AGENT=1`), inside an orb and over a folder hint such as `.codex/`. v0.1.14 chose between them at random. A test fails if one of them ever detects from a folder or PATH alone.
 
 ### Notes
 
