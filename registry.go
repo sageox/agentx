@@ -106,23 +106,28 @@ func (d *detector) DetectOrchestrator(ctx context.Context) (Agent, error) {
 
 // detectByRole finds the first detected agent matching the given role.
 //
-// Four phases, strongest evidence first; within a phase agents are tried in
+// Five phases, strongest evidence first; within a phase agents are tried in
 // List() order, so the result never depends on map iteration:
 //  1. Runtime signals (authoritative). Agents that implement RuntimeDetector
 //     are asked whether any of their non-AGENT_ENV evidence is present
 //     (CLAUDECODE=1, CLAUDE_CODE_ENTRYPOINT, PI_CODING_AGENT_DIR, etc.).
 //     The first match wins regardless of what AGENT_ENV says.
 //  2. An explicit AGENT_ENV naming a registered agent, by type or alias.
-//  3. Venue signals (VenueDetector): the host belongs to an agent, such as
+//  3. Detect() of agents that don't implement RuntimeDetector. Detect() is
+//     their only evidence, and it is their own marker (GOOSE=1,
+//     CURSOR_AGENT=1), not a filesystem hint.
+//  4. Venue signals (VenueDetector): the host belongs to an agent, such as
 //     an Amp orb.
-//  4. Everything else Detect() reports, including filesystem hints like a
+//  5. Everything else Detect() reports, including filesystem hints like a
 //     checked-in .codex/ directory.
 //
 // Phase 1 before 2 resolves the #527 class of bug: a Claude Code session
 // where a stray CLAUDE.md instruction sets AGENT_ENV=pi no longer silently
-// mis-routes through the Pi adapter. Phases 2 and 3 before 4 resolve
+// mis-routes through the Pi adapter. Phases 2 to 4 before 5 resolve
 // sageox/agentx#17: inside an Amp orb, a repository's .codex/ directory
 // made Codex win, so the orb's sessions were never recorded as Amp's.
+// Phase 3 before 4 keeps an agent run inside an orb, such as Goose, from
+// being reported as the orb's Amp.
 func (d *detector) detectByRole(ctx context.Context, role AgentRole) (Agent, error) {
 	env := d.getEnv()
 	agents := d.registry.List()
@@ -151,7 +156,20 @@ func (d *detector) detectByRole(ctx context.Context, role AgentRole) (Agent, err
 		}
 	}
 
-	// Phase 3: venue signals
+	// Phase 3: agents whose Detect() is all the evidence they have
+	for _, agent := range agents {
+		if agent.Role() != role {
+			continue
+		}
+		if _, ok := agent.(RuntimeDetector); ok {
+			continue
+		}
+		if detected, err := agent.Detect(ctx, env); err == nil && detected {
+			return agent, nil
+		}
+	}
+
+	// Phase 4: venue signals
 	for _, agent := range agents {
 		if agent.Role() != role {
 			continue
@@ -165,7 +183,7 @@ func (d *detector) detectByRole(ctx context.Context, role AgentRole) (Agent, err
 		}
 	}
 
-	// Phase 4: fallback to AGENT_ENV-inclusive Detect, filesystem hints included
+	// Phase 5: fallback to AGENT_ENV-inclusive Detect, filesystem hints included
 	for _, agent := range agents {
 		if agent.Role() != role {
 			continue
@@ -178,19 +196,27 @@ func (d *detector) detectByRole(ctx context.Context, role AgentRole) (Agent, err
 	return nil, nil
 }
 
+// agentENVAliaser is the part of LifecycleEventMapper that names an agent's
+// AGENT_ENV values. Some agents declare aliases without mapping lifecycle
+// events (OMP accepts "oh-my-pi" but has no EventPhases), so phase 2 checks
+// this alone.
+type agentENVAliaser interface {
+	AgentENVAliases() []string
+}
+
 // namedByAgentENV reports whether a lowercased, trimmed AGENT_ENV names
-// agent: its type, or one of its aliases when it maps lifecycle events.
-// The type counts too because some agents (Codex) declare no aliases and
-// match AGENT_ENV against their type inside Detect.
+// agent: its type, or one of its aliases. The type counts too because some
+// agents (Codex) declare no aliases and match AGENT_ENV against their type
+// inside Detect.
 func namedByAgentENV(agent Agent, agentEnv string) bool {
 	if strings.ToLower(string(agent.Type())) == agentEnv {
 		return true
 	}
-	mapper, ok := agent.(LifecycleEventMapper)
+	aliaser, ok := agent.(agentENVAliaser)
 	if !ok {
 		return false
 	}
-	for _, alias := range mapper.AgentENVAliases() {
+	for _, alias := range aliaser.AgentENVAliases() {
 		if strings.ToLower(alias) == agentEnv {
 			return true
 		}

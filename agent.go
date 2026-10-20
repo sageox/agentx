@@ -215,9 +215,12 @@ type AgentDetector interface {
 // runtime signals. This interface is how each agent declares which of its
 // signals count as "runtime" (authoritative) vs. which count as "override".
 //
-// Agents that don't implement this interface are treated as "AGENT_ENV-only"
-// and never match during the runtime-priority phase — their Detect() still
-// runs in the fallback phase.
+// Agents that don't implement this interface never match during the
+// runtime-priority phase. Their Detect() runs right after the AGENT_ENV
+// phase, ahead of venue signals, so it must read only the agent's own
+// markers, never a folder or PATH: a hint there would outrank an Amp orb
+// (sageox/agentx#17). An agent that needs a filesystem hint implements this
+// interface, and its Detect() then runs in the last phase.
 type RuntimeDetector interface {
 	// DetectRuntime reports whether the agent is active based on runtime
 	// signals only. Implementations MUST NOT consult AGENT_ENV; that signal
@@ -230,11 +233,11 @@ type RuntimeDetector interface {
 // machine, so their marker reaches every process on it, not just the
 // agent's own. An Amp orb sets AMP_ORB for its entire sandbox.
 //
-// A venue signal is weaker evidence than a runtime signal (another agent,
-// such as Claude Code, can run inside the venue) or an explicit AGENT_ENV,
-// and stronger than a filesystem hint such as a checked-in .codex/
-// directory. The Detector consults it between those phases
-// (sageox/agentx#17).
+// A venue signal is weaker evidence than a runtime signal, an explicit
+// AGENT_ENV, or another agent's own marker (Claude Code or Goose can run
+// inside the venue), and stronger than a filesystem hint such as a
+// checked-in .codex/ directory. The Detector consults it between those
+// phases (sageox/agentx#17).
 type VenueDetector interface {
 	// DetectVenue reports whether the process runs on a host this agent
 	// provides. Implementations MUST NOT consult AGENT_ENV.
