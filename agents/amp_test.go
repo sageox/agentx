@@ -38,9 +38,10 @@ func TestAmpDetect(t *testing.T) {
 	}
 }
 
-// AMP_ORB marks the whole orb, so it must stay out of DetectRuntime: a
-// runtime match outranks every other agent's, and Claude Code run inside
-// an orb would otherwise be reported as Amp (sageox/agentx#17).
+// AMP_ORB and AMP_THREAD_ID are inherited by everything under an orb's
+// thread, so they must stay out of DetectRuntime: a runtime match outranks
+// every other agent's, and Claude Code run inside an orb would otherwise be
+// reported as Amp (sageox/agentx#17).
 func TestAmpOrbIsAVenueSignalNotARuntimeSignal(t *testing.T) {
 	ctx := context.Background()
 	agent := NewAmpAgent()
@@ -53,7 +54,8 @@ func TestAmpOrbIsAVenueSignalNotARuntimeSignal(t *testing.T) {
 	}{
 		{"orb only", map[string]string{"AMP_ORB": "1"}, false, true},
 		{"orb with thread URL", map[string]string{"AMP_ORB": "1", "AMP_THREAD_URL": "https://ampcode.com/threads/T-1"}, true, true},
-		{"real orb agent shell (thread id, no URL)", map[string]string{"AMP_ORB": "1", "AMP_THREAD_ID": "T-1", "AMP_URL": "https://ampcode.com"}, true, true},
+		{"real orb agent shell (thread id, no URL)", map[string]string{"AMP_ORB": "1", "AMP_THREAD_ID": "T-1", "AMP_URL": "https://ampcode.com"}, false, true},
+		{"thread id alone", map[string]string{"AMP_THREAD_ID": "T-1"}, false, true},
 		{"thread URL only (laptop)", map[string]string{"AMP_THREAD_URL": "https://ampcode.com/threads/T-1"}, true, false},
 		{"empty AMP_ORB", map[string]string{"AMP_ORB": ""}, false, false},
 		{"AGENT_ENV=amp is neither", map[string]string{"AGENT_ENV": "amp"}, false, false},
