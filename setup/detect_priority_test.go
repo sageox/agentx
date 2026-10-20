@@ -40,6 +40,8 @@ func TestDetect_PriorityAcrossRealAgents(t *testing.T) {
 		{"an agent's own marker beats a .codex/ hint", map[string]string{"CURSOR_AGENT": "1"}, codexDir, agentx.AgentTypeCursor},
 		// an alias counts even for an agent that maps no lifecycle events
 		{"AGENT_ENV=oh-my-pi (an alias) inside an orb", map[string]string{"AMP_ORB": "1", "AGENT_ENV": "oh-my-pi"}, codexDir, agentx.AgentTypeOMP},
+		{"AGENT_ENV=codepuppy (not its type) inside an orb", map[string]string{"AMP_ORB": "1", "AGENT_ENV": "codepuppy"}, codexDir, agentx.AgentTypeCodePuppy},
+		{"AGENT_ENV=codepuppy beats Cline's marker (cline sorts first)", map[string]string{"AGENT_ENV": "codepuppy", "CLINE": "1"}, nil, agentx.AgentTypeCodePuppy},
 		{"AGENT_ENV=amp beats a .codex/ hint", map[string]string{"AGENT_ENV": "amp"}, codexDir, agentx.AgentTypeAmp},
 		{"AGENT_ENV is trimmed and case-insensitive", map[string]string{"AGENT_ENV": " Amp "}, codexDir, agentx.AgentTypeAmp},
 		{"no signals but .codex/ still means Codex", map[string]string{}, codexDir, agentx.AgentTypeCodex},

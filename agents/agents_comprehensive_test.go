@@ -1039,3 +1039,24 @@ func TestClineIsInstalled_VSCodeCheck(t *testing.T) {
 		assert.True(t, installed)
 	})
 }
+
+// TestAgentENVAliases_EachOneDetects keeps an agent's declared aliases in step
+// with its Detect: the detector's explicit-AGENT_ENV phase trusts the aliases,
+// so an alias Detect rejects would claim the session for the wrong reason.
+func TestAgentENVAliases_EachOneDetects(t *testing.T) {
+	checked := 0
+	for _, spec := range allAgentSpecs() {
+		aliaser, ok := spec.constructor().(interface{ AgentENVAliases() []string })
+		if !ok {
+			continue
+		}
+		for _, alias := range aliaser.AgentENVAliases() {
+			checked++
+			env := agentx.NewMockEnvironment(map[string]string{"AGENT_ENV": alias})
+			detected, err := spec.constructor().Detect(context.Background(), env)
+			require.NoError(t, err)
+			assert.True(t, detected, "%s: AGENT_ENV=%s is a declared alias but Detect rejects it", spec.name, alias)
+		}
+	}
+	require.NotZero(t, checked)
+}
