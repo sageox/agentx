@@ -141,6 +141,13 @@ func (a *CodePuppyAgent) IsInstalled(ctx context.Context, env agentx.Environment
 	return false, nil
 }
 
+// AgentENVAliases returns the AGENT_ENV values that identify Code Puppy. The
+// detector's explicit-AGENT_ENV phase matches an agent's type and these, so
+// "codepuppy", which Detect accepts but isn't the type, must be listed here.
+func (a *CodePuppyAgent) AgentENVAliases() []string {
+	return []string{"code-puppy", "codepuppy"}
+}
+
 func (a *CodePuppyAgent) SupportsSession() bool                 { return false }
 func (a *CodePuppyAgent) SessionID(_ agentx.Environment) string { return "" }
 

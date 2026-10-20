@@ -23,6 +23,7 @@ func TestAmpDetect(t *testing.T) {
 		{"AMP_AGENT=1", map[string]string{"AMP_AGENT": "1"}, true},
 		{"AMP_THREAD_URL set", map[string]string{"AMP_THREAD_URL": "https://ampcode.com/threads/abc123"}, true},
 		{"AGENT_ENV=amp", map[string]string{"AGENT_ENV": "amp"}, true},
+		{"AMP_ORB=1 (inside an orb)", map[string]string{"AMP_ORB": "1"}, true},
 		{"no env vars", map[string]string{}, false},
 		{"unrelated env", map[string]string{"CURSOR_AGENT": "1"}, false},
 	}
@@ -33,6 +34,42 @@ func TestAmpDetect(t *testing.T) {
 			detected, err := agent.Detect(ctx, env)
 			require.NoError(t, err)
 			assert.Equal(t, tt.expected, detected)
+		})
+	}
+}
+
+// AMP_ORB and AMP_THREAD_ID are inherited by everything under an orb's
+// thread, so they must stay out of DetectRuntime: a runtime match outranks
+// every other agent's, and Claude Code run inside an orb would otherwise be
+// reported as Amp (sageox/agentx#17).
+func TestAmpOrbIsAVenueSignalNotARuntimeSignal(t *testing.T) {
+	ctx := context.Background()
+	agent := NewAmpAgent()
+
+	tests := []struct {
+		name        string
+		envVars     map[string]string
+		wantRuntime bool
+		wantVenue   bool
+	}{
+		{"orb only", map[string]string{"AMP_ORB": "1"}, false, true},
+		{"orb with thread URL", map[string]string{"AMP_ORB": "1", "AMP_THREAD_URL": "https://ampcode.com/threads/T-1"}, true, true},
+		{"real orb agent shell (thread id, no URL)", map[string]string{"AMP_ORB": "1", "AMP_THREAD_ID": "T-1", "AMP_URL": "https://ampcode.com"}, false, true},
+		{"thread id alone", map[string]string{"AMP_THREAD_ID": "T-1"}, false, true},
+		{"thread URL only (laptop)", map[string]string{"AMP_THREAD_URL": "https://ampcode.com/threads/T-1"}, true, false},
+		{"empty AMP_ORB", map[string]string{"AMP_ORB": ""}, false, false},
+		{"AGENT_ENV=amp is neither", map[string]string{"AGENT_ENV": "amp"}, false, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			env := agentx.NewMockEnvironment(tt.envVars)
+			runtime, err := agent.DetectRuntime(ctx, env)
+			require.NoError(t, err)
+			assert.Equal(t, tt.wantRuntime, runtime, "DetectRuntime")
+			venue, err := agent.DetectVenue(ctx, env)
+			require.NoError(t, err)
+			assert.Equal(t, tt.wantVenue, venue, "DetectVenue")
 		})
 	}
 }
@@ -136,4 +173,27 @@ func TestAmpSessionID(t *testing.T) {
 		env := agentx.NewMockEnvironment(nil)
 		assert.Equal(t, "", agent.SessionID(env))
 	})
+
+	// An orb's agent shell has AMP_THREAD_ID and AMP_URL but no
+	// AMP_THREAD_URL (sageox/agentx#17). The rebuilt URL must match what
+	// the ox-bridge plugin sends at session end, or the recording is never
+	// found and never uploads.
+	orb := []struct {
+		name string
+		env  map[string]string
+		want string
+	}{
+		{"orb: id and AMP_URL", map[string]string{"AMP_THREAD_ID": "T-01a1", "AMP_URL": "https://ampcode.com"}, "https://ampcode.com/threads/T-01a1"},
+		{"orb: AMP_URL with trailing slash", map[string]string{"AMP_THREAD_ID": "T-01a1", "AMP_URL": "https://ampcode.com/"}, "https://ampcode.com/threads/T-01a1"},
+		{"orb: no AMP_URL falls back to ampcode.com", map[string]string{"AMP_THREAD_ID": "T-01a1"}, "https://ampcode.com/threads/T-01a1"},
+		{"self-hosted Amp server", map[string]string{"AMP_THREAD_ID": "T-9", "AMP_URL": "https://amp.example.test"}, "https://amp.example.test/threads/T-9"},
+		{"thread URL wins over id", map[string]string{"AMP_THREAD_URL": "https://ampcode.com/threads/T-url", "AMP_THREAD_ID": "T-id"}, "https://ampcode.com/threads/T-url"},
+		{"id with a slash is refused", map[string]string{"AMP_THREAD_ID": "T-1/../x"}, ""},
+		{"blank id", map[string]string{"AMP_THREAD_ID": "  "}, ""},
+	}
+	for _, tt := range orb {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, agent.SessionID(agentx.NewMockEnvironment(tt.env)))
+		})
+	}
 }

@@ -3,6 +3,7 @@ package agents
 import (
 	"context"
 	"path/filepath"
+	"strings"
 
 	"github.com/sageox/agentx"
 )
@@ -36,8 +37,9 @@ func (a *AmpAgent) Role() agentx.AgentRole { return agentx.RoleAgent }
 //
 // Detection methods:
 //   - AMP_AGENT=1 or AMP=1
-//   - AMP_THREAD_URL is set (present in all Amp sessions)
+//   - AMP_THREAD_URL is set
 //   - AGENT_ENV=amp
+//   - AMP_ORB or AMP_THREAD_ID is set (inside an Amp orb)
 func (a *AmpAgent) Detect(ctx context.Context, env agentx.Environment) (bool, error) {
 	if ok, _ := a.DetectRuntime(ctx, env); ok {
 		return true, nil
@@ -48,7 +50,25 @@ func (a *AmpAgent) Detect(ctx context.Context, env agentx.Environment) (bool, er
 		return true, nil
 	}
 
+	if ok, _ := a.DetectVenue(ctx, env); ok {
+		return true, nil
+	}
+
 	return false, nil
+}
+
+// DetectVenue reports an Amp orb. An orb's agent shell carries AMP_ORB and
+// AMP_THREAD_ID but none of the runtime variables DetectRuntime checks, so
+// without this an orb session was never recognised as Amp's
+// (sageox/agentx#17).
+//
+// Both are venue signals, not runtime ones: every process started under the
+// thread inherits them, including another agent someone runs inside the orb.
+// As runtime signals they outranked that agent's own (Claude Code's
+// CLAUDECODE=1 lost to the inherited AMP_THREAD_ID), and its session was
+// recorded as Amp's.
+func (a *AmpAgent) DetectVenue(_ context.Context, env agentx.Environment) (bool, error) {
+	return env.GetEnv("AMP_ORB") != "" || env.GetEnv("AMP_THREAD_ID") != "", nil
 }
 
 // DetectRuntime reports Amp presence from runtime signals only —
@@ -60,7 +80,8 @@ func (a *AmpAgent) DetectRuntime(_ context.Context, env agentx.Environment) (boo
 		return true, nil
 	}
 
-	// AMP_THREAD_URL is set by Amp in all sessions
+	// AMP_THREAD_URL is set by Amp in all sessions on a laptop. An orb's
+	// AMP_THREAD_ID is a venue signal instead; see DetectVenue.
 	if env.GetEnv("AMP_THREAD_URL") != "" {
 		return true, nil
 	}
@@ -166,8 +187,26 @@ func (a *AmpAgent) AgentENVAliases() []string {
 }
 
 func (a *AmpAgent) SupportsSession() bool { return true }
+
+// SessionID returns the thread URL that recordings of this thread are keyed
+// by. An orb's agent shell has no AMP_THREAD_URL, only AMP_THREAD_ID and
+// AMP_URL (sageox/agentx#17), so the URL is rebuilt from those in the shape
+// the ox-bridge plugin sends at session end, <AMP_URL>/threads/<id>.
+// Without it an orb recording has no thread to match and never uploads.
 func (a *AmpAgent) SessionID(env agentx.Environment) string {
-	return env.GetEnv("AMP_THREAD_URL")
+	if threadURL := env.GetEnv("AMP_THREAD_URL"); threadURL != "" {
+		return threadURL
+	}
+	threadID := strings.TrimSpace(env.GetEnv("AMP_THREAD_ID"))
+	// a thread id is one URL path segment; anything else isn't one we can use
+	if threadID == "" || strings.ContainsAny(threadID, "/?# ") {
+		return ""
+	}
+	base := strings.TrimRight(strings.TrimSpace(env.GetEnv("AMP_URL")), "/")
+	if base == "" {
+		base = "https://ampcode.com"
+	}
+	return base + "/threads/" + threadID
 }
 
 var _ agentx.Agent = (*AmpAgent)(nil)
